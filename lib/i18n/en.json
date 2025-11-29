@@ -1,0 +1,13 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout"
+  },
+  "home": {
+    "title": "Welcome to Metsamdti",
+    "subtitle": "A private, marriage-focused matchmaking platform"
+  }
+}
+
