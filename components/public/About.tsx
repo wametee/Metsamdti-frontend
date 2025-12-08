@@ -78,14 +78,27 @@ export default function About() {
       </div>
 
       {/* Overlapping Maroon Circle */}
-      <div className="
-        absolute bottom-[-20px] left-[10px] md:bottom-0 md:left-[-40px]
-        w-[150px] h-[150px] md:w-[190px] md:h-[190px]
-        bg-[#702C3E] rounded-full flex items-center justify-center
-        text-white text-sm md:text-lg font-medium shadow-md
-      ">
-        Partners for life
-      </div>
+     {/* Overlapping Maroon Circle */}
+<div
+  className="
+    absolute 
+    bottom-[-20px] left-[10px]          /* mobile */
+
+    md:bottom-[-10px] md:left-[-10px]   /* medium screens (laptops/tablets) */
+
+    lg:bottom-0 lg:left-[-40px]         /* large screens exactly like screenshot */
+
+    w-[150px] h-[150px] 
+    md:w-[170px] md:h-[170px] 
+    lg:w-[190px] lg:h-[190px]
+
+    bg-[#702C3E] rounded-full flex items-center justify-center
+    text-white text-sm md:text-base lg:text-lg font-medium shadow-md
+  "
+>
+  Partners for life
+</div>
+
 
     </div>
   </div>
