@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" dir="ltr">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-[#FCF8F8] min-h-screen`}> 
         <LanguageProvider>
           {children}
           <Toaster />

@@ -19,8 +19,10 @@
   }
 }
 
+/* Let Tailwind utility classes control the page background (set on <body> in layout.tsx).
+   Keep color and font here but do NOT set a background, otherwise this rule will
+   override Tailwind's `bg-...` utilities. */
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

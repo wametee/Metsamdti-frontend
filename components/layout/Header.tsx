@@ -2,6 +2,7 @@
 import { FaArrowRightLong } from "react-icons/fa6";
 import logo from '@/assets/logo.jpg'; 
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Header() {
   return (
@@ -24,12 +25,13 @@ export default function Header() {
 
           {/* About Us — Perfectly centered */}
           <nav className="hidden md:block absolute left-1/2 -translate-x-1/2">
-            <a
-              href="#about"
+            <Link
+              href="/about"
               className="text-gray-700 hover:text-primary font-medium transition-colors"
+              aria-label="About Metsamdti"
             >
               About Us
-            </a>
+            </Link>
           </nav>
 
           {/* Get Started Button — EXACT match from Figma */}
