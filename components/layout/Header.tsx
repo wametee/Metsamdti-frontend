@@ -66,7 +66,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile slide-in menu from right */}
+    
       <div
         className={`fixed top-0 right-0 bottom-16 w-72 bg-white shadow-xl transform transition-transform duration-300 z-50 md:hidden ${open ? 'translate-x-0' : 'translate-x-full'}`}
         role="dialog"
