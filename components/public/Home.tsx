@@ -4,6 +4,10 @@ import { FiArrowUpRight } from 'react-icons/fi';
 import Footer from '@/components/layout/Footer';
 import Hero from "@/assets/hero.jpg"
 import HowItWorks from "@/assets/howitworks.png"
+import { GiJourney } from "react-icons/gi";
+import { GiMeditation } from "react-icons/gi";
+import { GiLovers } from "react-icons/gi";
+import { AiFillCaretLeft } from "react-icons/ai";
 
 export default function Home() {
   const questions = [
@@ -25,12 +29,12 @@ export default function Home() {
 
             {/* 1) TOP BLOCK: title + subtitle (stacked column) */}
             <div className="text-center">
-              <h1 className="text-[34px] sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.02] text-[#702C3E]">
+              <h1 className="text-[34px] sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.02] text-[#702C3E]">
                 Metsamdti — Soulmates,<br />
                 <span className="text-[#702C3E]">Partner for Life</span>
               </h1>
 
-              <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed text-[#2F2E2E]">
+              <p className="mx-auto mt-6 max-w-2xl text-regular text-left sm:text-lg md:text-xl leading-relaxed text-[#2F2E2E]">
                 A guided matchmaking website for those who seek a lifelong partner, not casual dating.
               </p>
             </div>
@@ -39,7 +43,10 @@ export default function Home() {
             <div className="mt-12 grid gap-8 lg:grid-cols-2 lg:items-start">
               {/* LEFT: Ask Yourself + cards */}
               <div className="order-1 lg:order-none">
-                <h4 className="text-[#491A26] text-lg sm:text-xl font-semibold mb-5">
+                <h4
+                  className="text-[#491A26] text-lg sm:text-xl font-regular mb-5"
+                  style={{ textShadow: '0px 4px 4px rgba(0,0,0,0.25)' }}
+                >
                   Ask Yourself
                 </h4>
 
@@ -59,6 +66,7 @@ export default function Home() {
                         text-[#2F2E2E] 
                         text-sm 
                         leading-relaxed
+                        font-regular
                       "
                     >
                       {q}
@@ -70,7 +78,7 @@ export default function Home() {
 
               {/* RIGHT: image (matches “image on right” requirement) */}
               <div className="order-2 lg:order-none flex justify-center lg:justify-end">
-                <div className="relative w-[92%] sm:w-[75%] md:w-[68%] lg:w-[430px] aspect-[4/5] rounded-3xl overflow-hidden shadow-xl">
+                <div className="relative w-[92%] sm:w-[75%] md:w-[68%] lg:w-[430px] aspect-[4/5] rounded-tr-[48px] rounded-bl-[48px] rounded-tl-[120px] rounded-br-[120px] overflow-hidden shadow-xl">
                   <Image
                     src={Hero} 
                     alt="Couple at a cafe"
@@ -81,7 +89,7 @@ export default function Home() {
                   />
 
                   {/* optional bottom text overlay (matches your screenshot vibe) */}
-                  <div className="absolute inset-x-0 bottom-0 p-5 text-white text-base leading-snug bg-gradient-to-t from-black/65 via-black/15 to-transparent">
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white text-3xl leading-snug bg-gradient-to-t from-black/65 via-black/15 to-transparent font-regular">
                     If your answer is yes,<br />Metsamdti is here for you.
                   </div>
                 </div>
@@ -96,84 +104,84 @@ export default function Home() {
       <section className="w-full max-w-6xl mx-auto mt-20 px-6 relative">
 
       {/* Header */}
-      <h2 className="text-[#702C3E] font-title font-bold text-3xl md:text-4xl mb-6">
+      <h2 className="text-[#702C3E] font-title font-semibold text-3xl md:text-4xl mb-6">
         How Metsamdti Works
       </h2>
 
           <div className="relative flex flex-col md:flex-row md:items-start gap-10">
 
             {/* Left Image */}
-            <div className="relative w-full md:w-[430px] rounded-3xl overflow-hidden shadow-lg">
+            <div className="relative w-full md:w-[460px] rounded-3xl overflow-hidden shadow-lg min-h-[280px] md:h-[565px]">
              <Image
                 src={HowItWorks}
                 alt="HowItWorks"
-                fill 
+                fill
                 className="object-cover"
               />
             </div>
 
             {/* Pink Oval Background */}
-            <div className="absolute right-0 top-10 w-[500px] h-[420px] bg-[#F6E8EB] rounded-full opacity-60 blur-[1px] hidden md:block"></div>
+            <div className="absolute right-0 top-10 w-[530px] h-[420px] bg-[#F6E8EB] rounded-full opacity-60 blur-[1px] hidden md:block"></div>
 
             {/* Cards Container */}
           {/* Cards Container */}
-        <div className="relative flex flex-col gap-6 md:pl-6">
+  <div className="relative flex flex-col gap-6 md:pl-6 min-h-[520px] md:min-h-[640px]">
 
           {/* Card 1 */}
-          <div className="flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
-                          rounded-tl-[32px] rounded-br-[32px] rounded-tr-[12px] rounded-bl-[12px]
-                          p-4 max-w-md">
-            <span className="text-[#702C3E99] font-title font-bold text-xl">01</span>
+          <div className="md:absolute md:top-7 md:-left-48 md:z-40 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+                          rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
+                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+            <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">01</span>
             <div>
-              <h3 className="text-[#702C3E] font-title font-medium text-lg">
+              <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We ask the hard questions
               </h3>
-              <p className="text-[#333] text-sm leading-relaxed mt-1">
+              <p className="text-[#333] text-sm leading-relaxed mt-1 font-regular">
                 The ones people avoid in casual dating, but that matter for a lifetime.
               </p>
             </div>
           </div>
 
           {/* Card 2 */}
-          <div className="flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
-                          rounded-tl-[32px] rounded-br-[32px] rounded-tr-[12px] rounded-bl-[12px]
-                          p-4 max-w-md ml-4 md:ml-8">
-            <span className="text-[#702C3E99] font-title font-bold text-xl">02</span>
+          <div className="md:absolute md:top-40 md:-left-30 md:z-30 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+                         rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
+                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+            <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">02</span>
             <div>
-              <h3 className="text-[#702C3E] font-title font-medium text-lg">
+              <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We check backgrounds carefully
               </h3>
-              <p className="text-[#333] text-sm leading-relaxed mt-1">
+              <p className="text-[#333] text-sm leading-relaxed mt-1 font-regular">
                 So you know who you're really meeting.
               </p>
             </div>
           </div>
 
           {/* Card 3 */}
-          <div className="flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
-                          rounded-tl-[32px] rounded-br-[32px] rounded-tr-[12px] rounded-bl-[12px]
-                          p-4 max-w-md ml-6 md:ml-12">
-            <span className="text-[#702C3E99] font-title font-bold text-xl">03</span>
+          <div className="md:absolute md:top-75 md:-left-10 md:z-20 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+                        rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
+                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+            <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">03</span>
             <div>
-              <h3 className="text-[#702C3E] font-title font-medium text-lg">
+              <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We curate matches for you
               </h3>
-              <p className="text-[#333] text-sm leading-relaxed mt-1">
+              <p className="text-[#333] text-sm leading-relaxed mt-1 font-regular">
                 No swiping, no endless searching.
               </p>
             </div>
           </div>
 
           {/* Card 4 */}
-          <div className="flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
-                          rounded-tl-[32px] rounded-br-[32px] rounded-tr-[12px] rounded-bl-[12px]
-                          p-4 max-w-md ml-8 md:ml-16">
-            <span className="text-[#702C3E99] font-title font-bold text-xl">04</span>
+          <div className="md:absolute md:top-110 md:left-0 md:z-10 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+                          rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
+                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+            <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">04</span>
             <div>
-              <h3 className="text-[#702C3E] font-title font-medium text-lg">
+              <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We prevent heartbreak
               </h3>
-              <p className="text-[#333] text-sm leading-relaxed mt-1">
+              <p className="text-[#333] text-sm leading-relaxed mt-1 font-regular">
                 By ensuring both partners share the same values from the start.
               </p>
             </div>
@@ -188,10 +196,10 @@ export default function Home() {
         <section className="w-full max-w-6xl mx-auto mt-28 px-6">
           {/* Header */}
           <div className="text-center mb-14">
-            <h2 className="text-[#702C3E] font-title font-bold text-3xl md:text-4xl leading-tight">
+            <h2 className="text-[#702C3E] font-title font-semibold text-3xl md:text-4xl leading-tight">
               What set’s us apart?
             </h2>
-            <p className="mt-4 text-sm md:text-base text-[#2F2E2E] max-w-xl mx-auto leading-relaxed">
+            <p className="mt-4 text-sm md:text-base text-left text-[#2F2E2E] max-w-xl mx-auto leading-relaxed font-regular">
               Where other dating apps focus on swipes, casual flirting and endless options,
               we focus on intentional love, trust, and lifelong commitment.
             </p>
@@ -202,16 +210,16 @@ export default function Home() {
             
             {/* Card 1 */}
             <div className="bg-white/90 border border-[#EBD9D8] shadow-md 
-                            rounded-tl-[28px] rounded-br-[28px] rounded-tr-[12px] rounded-bl-[12px]
+                            rounded-tl-[28px] rounded-br-[28px] rounded-tr-[20px] rounded-bl-[20px]
                             px-6 py-7 text-center">
               <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center 
-                              rounded-full bg-[#F6E8EB]">
-                <span className="text-xl">🧭</span>
+                              rounded-lg bg-[#F6E8EB]">
+                <GiJourney className="h-8 w-8 text-[#702C3E]" />
               </div>
               <h3 className="text-[#702C3E] font-title font-semibold text-base mb-2">
                 Guided journeys
               </h3>
-              <p className="text-[#2F2E2E] text-sm leading-relaxed">
+              <p className="text-[#2F2E2E] text-left text-sm leading-relaxed text-regular">
                 A guided path for people who are serious about marriage, not games.
               </p>
             </div>
@@ -222,12 +230,12 @@ export default function Home() {
                             px-6 py-7 text-center">
               <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center 
                               rounded-full bg-[#F6E8EB]">
-                <span className="text-xl">🛡️</span>
+                <GiMeditation className="h-8 w-8 text-[#702C3E]" />
               </div>
               <h3 className="text-[#702C3E] font-title font-semibold text-base mb-2">
                 Deep protection
               </h3>
-              <p className="text-[#2F2E2E] text-sm leading-relaxed">
+              <p className="text-[#2F2E2E] text-left text-sm leading-relaxed text-regular">
                 Background checks and personal verification to ensure real, honest people.
               </p>
             </div>
@@ -238,12 +246,12 @@ export default function Home() {
                             px-6 py-7 text-center">
               <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center 
                               rounded-full bg-[#F6E8EB]">
-                <span className="text-xl">🤍</span>
+                <GiLovers className="h-8 w-8 text-[#702C3E]" />
               </div>
               <h3 className="text-[#702C3E] font-title font-semibold text-base mb-2">
                 Curated matches
               </h3>
-              <p className="text-[#2F2E2E] text-sm leading-relaxed">
+              <p className="text-[#2F2E2E] text-sm text-left leading-relaxed text-regular">
                 You are not shown random people, only carefully selected matches.
               </p>
             </div>
@@ -254,12 +262,12 @@ export default function Home() {
                             px-6 py-7 text-center">
               <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center 
                               rounded-full bg-[#F6E8EB]">
-                <span className="text-xl">🔺</span>
+                <AiFillCaretLeft className="h-8 w-8 text-[#702C3E]"/>
               </div>
               <h3 className="text-[#702C3E] font-title font-semibold text-base mb-2">
                 Core direction
               </h3>
-              <p className="text-[#2F2E2E] text-sm leading-relaxed">
+              <p className="text-[#2F2E2E] text-sm text-left leading-relaxed text-regular">
                 Every connection is built on purpose, values, and clear intention.
               </p>
             </div>
@@ -270,13 +278,13 @@ export default function Home() {
         {/* For Love That Lasts */}
         {/* For Love That Lasts */}
         <section className="w-full mt-28 bg-[#F0DBDA]">
-          <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 text-center flex ">
+          <div className="max-w-6xl mx-auto px-6 py-16 md:py-20 flex flex-col md:flex-row items-start md:items-center gap-6 text-center md:text-left">
             
             <h2 className="text-[#702C3E] font-title font-bold text-2xl md:text-3xl lg:text-4xl">
               For Love That Lasts
             </h2>
 
-            <p className="mt-6 text-[#2F2E2E] text-sm sm:text-base md:text-lg leading-relaxed max-w-3xl mx-auto">
+            <p className=" text-[#2F2E2E] text-sm sm:text-base md:text-lg leading-relaxed max-w-3xl mx-auto text-left">
               Metsamdti is not for casual dating. If you’re looking for short-term
               connections, silent conversations, or situationships, this is not the place.
               We exist for those who are ready to build real commitment, deep connection,

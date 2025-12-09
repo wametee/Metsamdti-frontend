@@ -1,6 +1,7 @@
 // components/Footer.tsx
 import Image from "next/image";
-import logo from "@/assets/logo.jpg";
+import Link from "next/link";
+import logo from "@/assets/logo2.png";
 import { FaTwitter, FaInstagram, FaGithub, FaLinkedinIn } from "react-icons/fa";
 
 export default function Footer() {
@@ -13,7 +14,7 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full overflow-hidden border border-[#702C3E]/20">
+              <div className="w-9 h-9  overflow-hidden">
                 <Image
                   src={logo}
                   alt="Metsamdti"
@@ -48,7 +49,11 @@ export default function Footer() {
             <div>
               <h4 className="font-semibold text-[#702C3E] mb-4">Company</h4>
               <ul className="space-y-3 text-[#2F2E2E]">
-                <li className="hover:opacity-70 cursor-pointer">About Us</li>
+                <li>
+                  <Link href="/about" className="hover:opacity-70">
+                    About Us
+                  </Link>
+                </li>
               </ul>
             </div>
 

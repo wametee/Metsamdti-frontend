@@ -7,20 +7,25 @@ import Love from "@/assets/love.jpg";
 export default function About() {
   return (
     <>
-      <section className="relative min-h-screen bg-gradient-to-b from-[#EDD4D3] to-[#FCF8F8] overflow-hidden rounded-bl-[7rem]"
-      style={{
-    backgroundImage: `url(${about.src})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }}
-      
-      >
-        <Header />
-
+      <section className="relative min-h-screen bg-gradient-to-b from-[#EDD4D3] to-[#FCF8F8] overflow-hidden rounded-bl-[7rem]">
         {/* Background image with curved bottom-left */}
         <div className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden rounded-bl-[7rem]">
+          {/* place Header inside hero so it overlays the background image */}
+          <div className="absolute top-0 left-0 w-full z-30">
+            <Header />
+          </div>
+          {/* optimized background image using next/image to leverage optimization + blur placeholder */}
+          <Image
+            src={about}
+            alt="About background"
+            fill
+            className="object-cover"
+            placeholder="blur"
+            priority
+            quality={70}
+            sizes="100vw"
+          />
 
-         
           {/* TEXT OVERLAY */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
             <h1 className="text-4xl md:text-6xl font-title font-semibold drop-shadow-lg">
@@ -69,7 +74,7 @@ export default function About() {
     <div className="relative flex justify-center md:justify-end">
 
       {/* Circle Image */}
-      <div className="w-[270px] h-[270px] md:w-[340px] md:h-[340px] rounded-full overflow-hidden shadow-md">
+      <div className="w-[270px] h-[310px] md:w-[380px] md:h-[340px] rounded-full overflow-hidden shadow-md">
         <Image
           src={Love}
           alt="Partners for life"
@@ -84,9 +89,9 @@ export default function About() {
     absolute 
     bottom-[-20px] left-[10px]          /* mobile */
 
-    md:bottom-[-10px] md:left-[-10px]   /* medium screens (laptops/tablets) */
+    md:bottom-[-20px] md:left-[-70px]   /* medium screens (laptops/tablets) */
 
-    lg:bottom-0 lg:left-[-40px]         /* large screens exactly like screenshot */
+    lg:bottom-[-20px] lg:left-[50px]         /* large screens exactly like screenshot */
 
     w-[150px] h-[150px] 
     md:w-[170px] md:h-[170px] 
