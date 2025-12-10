@@ -27,7 +27,7 @@ export default function ThankYou() {
           Thank you for being here
         </h1>
 
-        <p className="text-[#2F2E2E] text-sm sm:text-base leading-relaxed max-w-md mx-auto font-regular mb-8">
+        <p className="text-[#2F2E2E] text-sm sm:text-base leading-relaxed max-w-md mx-auto font-regular mb-8 text-left">
           As you move through these questions, answer honestly and thoughtfully. Your words will guide us toward someone who shares your values, your vision, and your heart.
         </p>
 
