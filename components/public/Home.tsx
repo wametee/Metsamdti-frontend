@@ -111,7 +111,7 @@ export default function Home() {
           <div className="relative flex flex-col md:flex-row md:items-start gap-10">
 
             {/* Left Image */}
-            <div className="relative w-full md:w-[460px] rounded-3xl overflow-hidden shadow-lg min-h-[280px] md:h-[565px]">
+            <div className="relative w-full md:w-[460px] rounded-3xl overflow-hidden shadow-lg h-[430px] sm:h-[480px] md:h-[565px]">
              <Image
                 src={HowItWorks}
                 alt="HowItWorks"
@@ -301,7 +301,7 @@ export default function Home() {
       {/* Mobile CTA (optional) */}
       <div className="fixed bottom-6 left-1/2 z-50 hidden -translate-x-1/2 md:block md:hidden">
         <a
-          href="/auth/signup"
+          href="/onboarding/welcome"
           className="group flex items-center gap-2 rounded-full bg-[#702C3E] px-8 py-4 font-semibold text-white shadow-2xl transition hover:bg-[#702C3E]/90"
         >
           Get Started

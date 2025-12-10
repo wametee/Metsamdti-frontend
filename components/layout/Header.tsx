@@ -48,7 +48,7 @@ export default function Header() {
           <div className="col-start-3 flex justify-end items-center gap-3">
             {/* Get Started visible on md+ */}
             <div className="hidden md:block">
-              <Link href="/auth/signup" aria-label="Get Started">
+              <Link href="/onboarding/welcome" aria-label="Get Started">
                 <button className="flex items-center gap-2 bg-[#702C3E] text-[F1F1F1] px-4 py-2 rounded-sm font-regular group">
                   Get Started
                   <FaArrowRightLong className="w-4 h-4 -mr-1 transform rotate-0 transition-transform duration-200 group-hover:-rotate-45 group-hover:-translate-y-1 group-hover:translate-x-1" />
@@ -81,7 +81,7 @@ export default function Header() {
         <nav className="flex flex-col p-4 gap-4">
           <Link href="/" className="text-gray-700 hover:text-[#702C3E] font-medium transition-colors">Home</Link>
           <Link href="/about" className="text-gray-700 hover:text-[#702C3E] font-medium transition-colors">About Us</Link>
-          <Link href="/auth/signup" aria-label="Get Started">
+          <Link href="/onboarding/welcome" aria-label="Get Started">
             <button className="flex items-center gap-2 bg-[#702C3E] text-white px-4 py-2 rounded-sm font-medium group">
               Get Started
               <FaArrowRightLong className="w-4 h-4 -mr-1 transform rotate-0 transition-transform duration-200 group-hover:-rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1" />
