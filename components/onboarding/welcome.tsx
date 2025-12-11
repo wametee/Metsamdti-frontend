@@ -1,3 +1,6 @@
+"use client";
+import { useRouter } from 'next/navigation';
+import { FaArrowLeft } from 'react-icons/fa6';
 import Header from '@/components/layout/Header';
 import Link from 'next/link';
 import { FiArrowUpRight } from 'react-icons/fi';
@@ -5,6 +8,8 @@ import Image from 'next/image';
 import logo from '@/assets/logo2.png';
 
 export default function Welcome() {
+  const router = useRouter();
+
   return (
     <section className="min-h-screen w-full bg-[#FCF8F8] flex flex-col md:justify-center relative">
       {/* Top Right Language Switch */}
@@ -13,6 +18,15 @@ export default function Welcome() {
           EN ▾
         </div>
       </div>
+
+      {/* Back button (top-left) */}
+      <button
+        onClick={() => router.back()}
+        aria-label="Go back"
+        className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-30"
+      >
+        <FaArrowLeft className="h-5 w-5" />
+      </button>
 
      
 

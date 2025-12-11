@@ -1,8 +1,13 @@
+"use client";
+import { useRouter } from 'next/navigation';
+import { FaArrowLeft } from 'react-icons/fa6';
 import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import logo from "@/assets/logo2.png";
 
 export default function ThankYou() {
+  const router = useRouter();
+
   return (
     <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
       {/* Top Bar */}
@@ -14,6 +19,15 @@ export default function ThankYou() {
         {/* Language Switcher */}
         <div className="absolute right-6 text-[#702C3E] text-sm cursor-pointer select-none">EN ▾</div>
       </div>
+
+      {/* Back button (top-left) */}
+      <button
+        onClick={() => router.back()}
+        aria-label="Go back"
+        className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-30"
+      >
+        <FaArrowLeft className="h-5 w-5" />
+      </button>
 
       {/* Background Diagonal Shape */}
       <div className="absolute top-0 right-0 w-[60%] h-full bg-[#DDB1B5] opacity-60 clip-path-diagonal"></div>
@@ -32,7 +46,11 @@ export default function ThankYou() {
         </p>
 
         {/* Continue Button */}
-        <button className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-6 py-3 rounded-md hover:bg-[#702C3E]/90 transition">
+        <button
+          type="button"
+          onClick={() => router.push('/onboarding/basics')}
+          className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-6 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
+        >
           Continue
           <FiArrowUpRight className="h-4 w-4" />
         </button>
