@@ -14,7 +14,9 @@ export default function BackgroundSeriesOne() {
   const [languages, setLanguages] = useState<string>('');
 
   return (
-    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center py-10 md:py-20 px-4">
+   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
+  pt-24 pb-10 md:py-20 px-4">
+
 
       {/* Back Button */}
       <button

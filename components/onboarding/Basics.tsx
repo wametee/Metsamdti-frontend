@@ -13,16 +13,23 @@ export default function Basics() {
   const router = useRouter();
 
   return (
-    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center py-10 md:py-20 px-4">
-      
-      {/* Back button (top-left of page) */}
-      <button onClick={() => router.back()} className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-40">
+    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
+  pt-24 pb-10 md:py-20 px-4">
+
+
+      {/* Back Button */}
+      <button
+        onClick={() => router.back()}
+        className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-40"
+      >
         <FaArrowLeft className="w-5 h-5" />
       </button>
 
-      {/* Language Switcher (top-right) */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">EN ▾</div>
-
+      {/* Language Switcher */}
+      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
+        EN ▾
+      </div>
+      
       {/* White Outer Card */}
       <div className="
         w-full max-w-3xl 

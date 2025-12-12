@@ -12,20 +12,22 @@ export default function BackgroundSeriesTwo() {
   const [living, setLiving] = useState<string>("");
 
   return (
-    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center py-10 md:py-20 px-4">
-
-      {/* Back Button */}
-      <button
-        onClick={() => router.back()}
-        className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-40"
-      >
-        <FaArrowLeft className="w-5 h-5" />
-      </button>
-
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
-      </div>
+ <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
+   pt-24 pb-10 md:py-20 px-4">
+ 
+ 
+       {/* Back Button */}
+       <button
+         onClick={() => router.back()}
+         className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-40"
+       >
+         <FaArrowLeft className="w-5 h-5" />
+       </button>
+ 
+       {/* Language Switcher */}
+       <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
+         EN ▾
+       </div>
 
       {/* Outer Card */}
       <div

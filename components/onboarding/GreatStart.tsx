@@ -1,0 +1,70 @@
+"use client";
+import { useRouter } from 'next/navigation';
+import { FaArrowLeft } from 'react-icons/fa6';
+import Image from "next/image";
+import { FiArrowUpRight } from "react-icons/fi";
+import logo from "@/assets/logo2.png";
+
+export default function GreatStart() {
+  const router = useRouter();
+
+  return (
+    <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
+      {/* Top Bar */}
+      <div className="w-full relative flex items-center justify-center px-6 pt-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-center gap-2 mx-auto">
+          <Image src={logo} alt="Metsamdti Logo" width={80} height={80} />
+        </div>
+
+  {/* Language Switcher */}
+  <div className="absolute right-6 top-4 md:top-6 text-[#702C3E] text-sm cursor-pointer select-none">EN ▾</div>
+      </div>
+
+      {/* Back button (top-left) */}
+      <button
+        onClick={() => router.back()}
+        aria-label="Go back"
+        className="absolute left-6 top-4 md:top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-30"
+      >
+        <FaArrowLeft className="h-5 w-5" />
+      </button>
+
+      {/* Center Card */}
+      <div className="relative z-10 mt-24 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] w-[90%] max-w-[620px] p-10 text-center">
+        {/* Small Circle Icon */}
+        <div className="w-10 h-10 rounded-full border border-[#702C3E] mx-auto mb-6" />
+
+        <h1 className="text-[#702C3E] text-2xl sm:text-3xl font-title font-semibold mb-4">
+        Great start!
+        </h1>
+
+        <p className="text-[#2F2E2E] text-sm sm:text-base leading-relaxed max-w-md mx-auto font-regular mb-8 text-left">
+          You’re 1/3 of the way to meeting 
+          The One! Next is Reflective Emotional Compatibility, a quick look at how you connect emotionally. Be open. Be real. Be you. This helps us match you with someone who truly aligns with you.
+        </p>
+
+        {/* Continue Button */}
+        <button
+          type="button"
+          onClick={() => router.push('/onboarding/emotional-series-one')}
+          className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-6 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
+        >
+          Start Emotional Evaluation
+          <FiArrowUpRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Terms */}
+      <p className="absolute bottom-8 text-xs text-[#2F2E2E] text-center w-full px-4">
+        By continuing, you agree to our <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>
+      </p>
+
+      {/* Custom Diagonal Clip */}
+      <style>{`
+        .clip-path-diagonal {
+          clip-path: polygon(40% 0, 100% 0, 100% 100%, 10% 100%);
+        }
+      `}</style>
+    </section>
+  );
+}
