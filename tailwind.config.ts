@@ -148,7 +148,9 @@ const config: Config = {
       },
 
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Use the Quicksand variable injected by next/font/google (app/layout.tsx)
+        // This keeps Tailwind utilities like `font-sans` pointing to Quicksand.
+        sans: ['var(--font-quicksand)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
 
       fontSize: {

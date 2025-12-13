@@ -9,15 +9,18 @@ export default function ThankYou() {
   const router = useRouter();
 
   return (
-    <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
+      <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
+
+      {/* Top-right language switcher (fixed to top-right across breakpoints) */}
+      <div className="absolute top-6 right-6 text-[#702C3E] text-sm cursor-pointer select-none z-30">
+        EN ▾
+      </div>
+
       {/* Top Bar */}
       <div className="w-full relative flex items-center justify-center px-6 pt-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-center gap-2 mx-auto">
           <Image src={logo} alt="Metsamdti Logo" width={80} height={80} />
         </div>
-
-        {/* Language Switcher */}
-        <div className="absolute right-6 text-[#702C3E] text-sm cursor-pointer select-none">EN ▾</div>
       </div>
 
       {/* Back button (top-left) */}
@@ -37,11 +40,11 @@ export default function ThankYou() {
         {/* Small Circle Icon */}
         <div className="w-10 h-10 rounded-full border border-[#702C3E] mx-auto mb-6" />
 
-        <h1 className="text-[#702C3E] text-2xl sm:text-3xl font-title font-semibold mb-4">
+        <h1 className="text-black text-3xl sm:text-4xl md:text-5xl font-bold font-title mb-4">
           Thank you for being here
         </h1>
 
-        <p className="text-[#2F2E2E] text-sm sm:text-base leading-relaxed max-w-md mx-auto font-regular mb-8 text-left">
+        <p className="text-[#2F2E2E] text-sm sm:text-base leading-relaxed max-w-md mx-auto font-medium mb-8 text-left">
           As you move through these questions, answer honestly and thoughtfully. Your words will guide us toward someone who shares your values, your vision, and your heart.
         </p>
 

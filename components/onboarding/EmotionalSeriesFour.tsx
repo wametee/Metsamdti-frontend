@@ -48,16 +48,14 @@ export default function EmotionalSeriesFour() {
       </div>
 
       {/* Outer Card */}
-      <div
-        className="
-          w-full max-w-3xl
-          bg-[#EDD4D3]
-          border-2 border-white
-          rounded-2xl
-          py-10 px-6 md:px-12
-          shadow-md
-        "
-      >
+       <div className="
+        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
+        bg-[#EDD4D3] 
+        border-2 border-white 
+        rounded-2xl 
+        py-10 px-6 md:px-20
+        shadow-md 
+      ">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6">
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
@@ -70,27 +68,28 @@ export default function EmotionalSeriesFour() {
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl md:text-3xl font-semibold text-[#491A26] mb-3">
+        <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
           Reflective Emotional Compatibility
         </h2>
 
         {/* Subtitle */}
-        <p className="text-sm text-[#5A4A4A] max-w-lg mb-10 leading-relaxed">
+        <p className="text-sm md:text-base text-[#5A4A4A] max-w-lg mb-6 leading-relaxed font-medium">
           Emotional compatibility is about understanding how you feel, respond, and connect.
           These questions are an invitation to pause and reflect on your emotional rhythm — 
           not to choose quickly, but to answer honestly.
         </p>
 
         {/* FORM CARD */}
-        <div className="p-6 md:p-8 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* QUESTION 1 */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#491A26]">
+            <p className="text-base text-[#491A26] font-semibold mb-0">
               When someone disagrees with you, what happens inside you?
-              <span className="block text-[#5A4A4A] text-xs mt-1">
-                Consider your honest emotional reaction.
-              </span>
+             
+            </p>
+              <p className="text-[#5A5959] font-medium text-sm mb-0">
+              Consider your honest emotional reaction.
             </p>
 
             <div className="flex flex-col gap-3">
@@ -99,7 +98,7 @@ export default function EmotionalSeriesFour() {
                   key={option}
                   onClick={() => setDisagree(option)}
                   className="
-                    w-full bg-[#F6E7EA] border border-[#E4D6D6]
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
                     hover:brightness-105 transition
                   "
@@ -111,7 +110,7 @@ export default function EmotionalSeriesFour() {
                     onChange={() => setDisagree(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
-                  <span className="text-sm text-[#491A26] ml-3">{option}</span>
+                  <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
                 </label>
               ))}
             </div>
@@ -119,11 +118,13 @@ export default function EmotionalSeriesFour() {
 
           {/* QUESTION 2 */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#491A26]">
+           <p className="text-base text-[#491A26] font-semibold mb-0">
               When someone you love is upset, how do you respond?
-              <span className="block text-[#5A4A4A] text-xs mt-1">
-                Picture yourself in that moment — what do you do first?
-              </span>
+             
+            </p>
+
+              <p className="text-[#5A5959] font-medium text-sm mb-0">
+              Picture yourself in that moment — what do you do first?
             </p>
 
             <div className="flex flex-col gap-3">
@@ -132,7 +133,7 @@ export default function EmotionalSeriesFour() {
                   key={option}
                   onClick={() => setUpset(option)}
                   className="
-                    w-full bg-[#F6E7EA] border border-[#E4D6D6]
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
                     hover:brightness-105 transition
                   "
@@ -144,7 +145,7 @@ export default function EmotionalSeriesFour() {
                     onChange={() => setUpset(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
-                  <span className="text-sm text-[#491A26] ml-3">{option}</span>
+                  <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
                 </label>
               ))}
             </div>
@@ -152,11 +153,12 @@ export default function EmotionalSeriesFour() {
 
           {/* QUESTION 3 */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#491A26]">
+           <p className="text-base text-[#491A26] font-semibold mb-0">
               What helps you refill your emotional energy?
-              <span className="block text-[#5A4A4A] text-xs mt-1">
-                Look at your patterns — when do you feel most restored?
-              </span>
+             
+            </p>
+              <p className="text-[#5A5959] font-medium text-sm mb-0">
+              Look at your patterns — when do you feel most restored?
             </p>
 
             <div className="flex flex-col gap-3">
@@ -165,7 +167,7 @@ export default function EmotionalSeriesFour() {
                   key={option}
                   onClick={() => setRefill(option)}
                   className="
-                    w-full bg-[#F6E7EA] border border-[#E4D6D6]
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
                     hover:brightness-105 transition
                   "
@@ -177,7 +179,7 @@ export default function EmotionalSeriesFour() {
                     onChange={() => setRefill(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
-                  <span className="text-sm text-[#491A26] ml-3">{option}</span>
+                  <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
                 </label>
               ))}
             </div>

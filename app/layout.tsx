@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Quicksand } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ["latin"] });
+const quicksand = Quicksand({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-quicksand",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Metsamdti — Private Marriage Matchmaking",
@@ -17,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" dir="ltr">
-      <body className={`${inter.className} bg-[#FCF8F8] min-h-screen`}> 
+    <html lang="en" dir="ltr" className={quicksand.variable}>
+      <body className={`${quicksand.className} bg-[#FCF8F8] min-h-screen`}>
         <LanguageProvider>
           {children}
           <Toaster />

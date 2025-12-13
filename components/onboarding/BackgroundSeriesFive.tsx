@@ -34,16 +34,14 @@ export default function BackgroundSeriesFive() {
       </div>
 
       {/* Outer Card */}
-      <div
-        className="
-          w-full max-w-3xl
-          bg-[#EDD4D3]
-          border-2 border-white
-          rounded-2xl
-          py-10 px-6 md:px-12
-          shadow-md
-        "
-      >
+      <div className="
+        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
+        bg-[#EDD4D3] 
+        border-2 border-white 
+        rounded-2xl 
+        py-10 px-6 md:px-20
+        shadow-md 
+      ">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6">
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
@@ -55,25 +53,25 @@ export default function BackgroundSeriesFive() {
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl md:text-3xl font-semibold text-[#491A26] mb-3">
+        <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
           Relationship History & Readiness
         </h2>
 
         {/* Subtitle */}
-        <p className="text-sm text-[#5A4A4A] max-w-lg mb-6 leading-relaxed">
+               <p className="text-sm text-[#5A4A4A] max-w-lg mb-6 leading-relaxed font-medium">
           Every readiness for love has roots nurtured by what fulfills you and strengthened by what hurts you.
           These questions aren’t tests; they're mirrors, helping us understand the patterns you value in
           relationships.
         </p>
 
         {/* Form Section */}
-        <div className="p-6 md:p-8 flex flex-col gap-10 bg-[#EDD4D3]/60">
+        <div className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
 
           {/* CHILDREN PREFERENCE */}
           <div className="flex flex-col gap-3">
-            <p className="text-[#5A5959] font-normal text-[18px]">Just wondering.</p>
+            <p className="text-[#5A5959] text-sm font-medium">Just wondering.</p>
 
-            <label className="text-sm text-[#491A26]">
+            <label className="text-base text-[#491A26] font-semibold">
               Are you open to a partner who has children?
             </label>
 
@@ -141,9 +139,9 @@ export default function BackgroundSeriesFive() {
 
           {/* AGE RANGE */}
           <div className="flex flex-col gap-3">
-            <p className="text-[#5A5959] font-normal text-[18px]">And,</p>
+            <p className="text-[#5A5959] text-sm font-medium">And,</p>
 
-            <label className="text-sm text-[#491A26]">
+            <label className="text-base text-[#491A26] font-semibold">
               What is your preferred age range for a partner?
             </label>
 
@@ -200,11 +198,11 @@ export default function BackgroundSeriesFive() {
 
           {/* TIMELINE FOR MARRIAGE */}
           <div className="flex flex-col gap-3">
-            <p className="text-[#5A5959] font-normal text-[18px]">
+            <p className="text-[#5A5959] text-sm font-medium">
               Regarding your intentions,
             </p>
 
-            <label className="text-sm text-[#491A26]">
+            <label className="text-base text-[#491A26] font-semibold">
               What is your ideal timeline for marriage?
             </label>
 

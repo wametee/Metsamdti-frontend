@@ -39,11 +39,11 @@ export default function Welcome() {
           <div className="flex items-center justify-center gap-2 mx-auto">
             <Image src={logo} alt="Metsamdti" width={80} height={80} />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#702C3E]">
-            Welcome to <span className="text-[#702C3E]">Metsamdti</span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-black">
+            Welcome to <span className="text-[#702C3E] font-bold">Metsamdti</span>
           </h1>
 
-          <p className="mt-4 max-w-lg mx-auto text-sm sm:text-base md:text-lg leading-relaxed text-[#2F2E2E] font-regular text-left">
+          <p className="mt-4 max-w-lg mx-auto text-sm sm:text-base md:text-lg leading-relaxed text-[#2F2E2E] font-medium text-center">
             This is a space created with intention — a place to slow down, reflect, and honor the kind of 
             connection you seek.<br />Your journey begins here.
           </p>

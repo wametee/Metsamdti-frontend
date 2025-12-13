@@ -50,16 +50,14 @@ export default function EmotionalSeriesFive() {
          </div>
 
       {/* Outer Card */}
-      <div
-        className="
-          w-full max-w-3xl
-          bg-[#EDD4D3]
-          border-2 border-white
-          rounded-2xl
-          py-10 px-6 md:px-12
-          shadow-md
-        "
-      >
+       <div className="
+        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
+        bg-[#EDD4D3] 
+        border-2 border-white 
+        rounded-2xl 
+        py-10 px-6 md:px-20
+        shadow-md 
+      ">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6">
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
@@ -72,28 +70,29 @@ export default function EmotionalSeriesFive() {
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl md:text-3xl font-semibold text-[#491A26] mb-3">
+         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
           Reflective Emotional Compatibility
         </h2>
 
         {/* Subtitle */}
-        <p className="text-sm text-[#5A4A4A] max-w-lg mb-10 leading-relaxed">
+         <p className="text-sm md:text-base text-[#5A4A4A] max-w-lg mb-6 leading-relaxed font-medium">
           Emotional compatibility is about understanding how you feel, respond, and connect.
           These questions are an invitation to pause and reflect on your emotional rhythm — 
           not to choose quickly, but to answer honestly.
         </p>
 
         {/* FORM CARD */}
-        <div className="p-6 md:p-8 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* QUESTION 1 */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#491A26]">
+            <p className="text-base text-[#491A26] font-semibold mb-0">
               What communication style feels safest to your heart?
-              <span className="block text-[#5A4A4A] text-xs mt-1">
-                Which one makes you feel understood?
-              </span>
+            
             </p>
+              <p className="text-[#5A5959] font-medium text-sm mb-0">
+                         Which one makes you feel understood?
+                        </p>
 
             <div className="flex flex-col gap-3">
               {styleOptions.map((option) => (
@@ -101,7 +100,7 @@ export default function EmotionalSeriesFive() {
                   key={option}
                   onClick={() => setStyleSafe(option)}
                   className="
-                    w-full bg-[#F6E7EA] border border-[#E4D6D6]
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
                     hover:brightness-105 transition
                   "
@@ -113,7 +112,7 @@ export default function EmotionalSeriesFive() {
                     onChange={() => setStyleSafe(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
-                  <span className="text-sm text-[#491A26] ml-3">{option}</span>
+                  <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
                 </label>
               ))}
             </div>
@@ -121,11 +120,13 @@ export default function EmotionalSeriesFive() {
 
           {/* QUESTION 2 */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#491A26]">
+          <p className="text-base text-[#491A26] font-semibold mb-0">
               Which approach to life feels more natural to you?
-              <span className="block text-[#5A4A4A] text-xs mt-1">
-                Think of your energy — do you like clarity or freedom?
-              </span>
+             
+            </p>
+
+              <p className="text-[#5A5959] font-medium text-sm mb-0">
+              Think of your energy — do you like clarity or freedom?
             </p>
 
             <div className="flex flex-col gap-3">
@@ -134,7 +135,7 @@ export default function EmotionalSeriesFive() {
                   key={option}
                   onClick={() => setApproachNatural(option)}
                   className="
-                    w-full bg-[#F6E7EA] border border-[#E4D6D6]
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
                     hover:brightness-105 transition
                   "
@@ -146,7 +147,7 @@ export default function EmotionalSeriesFive() {
                     onChange={() => setApproachNatural(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
-                  <span className="text-sm text-[#491A26] ml-3">{option}</span>
+                  <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
                 </label>
               ))}
             </div>
@@ -154,11 +155,12 @@ export default function EmotionalSeriesFive() {
 
           {/* QUESTION 3 */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#491A26]">
+            <p className="text-base text-[#491A26] font-semibold mb-0">
               What kind of relationship do you value most?
-              <span className="block text-[#5A4A4A] text-xs mt-1">
-                Imagine the partnership that feels “right” to your soul.
-              </span>
+            </p>
+
+              <p className="text-[#5A5959] font-medium text-sm mb-0">
+             Imagine the partnership that feels “right” to your soul.
             </p>
 
             <div className="flex flex-col gap-3">
@@ -167,7 +169,7 @@ export default function EmotionalSeriesFive() {
                   key={option}
                   onClick={() => setRelationshipValue(option)}
                   className="
-                    w-full bg-[#F6E7EA] border border-[#E4D6D6]
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
                     hover:brightness-105 transition
                   "
@@ -179,7 +181,7 @@ export default function EmotionalSeriesFive() {
                     onChange={() => setRelationshipValue(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
-                  <span className="text-sm text-[#491A26] ml-3">{option}</span>
+                  <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
                 </label>
               ))}
             </div>

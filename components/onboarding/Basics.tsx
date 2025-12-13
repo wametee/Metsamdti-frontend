@@ -30,13 +30,13 @@ export default function Basics() {
         EN ▾
       </div>
       
-      {/* White Outer Card */}
+      {/* White Outer Card: slightly wider on medium (laptop) screens */}
       <div className="
-        w-full max-w-3xl 
+        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
         bg-[#EDD4D3] 
         border-2 border-white 
         rounded-2xl 
-        py-10 px-6 md:px-12
+        py-10 px-6 md:px-20
         shadow-md
       ">
         
@@ -49,55 +49,55 @@ export default function Basics() {
           />
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-1.5 bg-[#E7D3D1] rounded-full mb-10">
-          <div className="h-full w-[20%] bg-[#702C3E] rounded-full"></div>
+        {/* Progress Bar (taller and padded on md, narrower on md/lg) */}
+        <div className="w-full md:w-11/12 lg:w-10/12 h-2 md:h-3 bg-[#F6E7EA] rounded-full mb-10 md:mb-12 px-2 ml-0">
+          <div className="h-full w-[14%] md:w-[8%] lg:w-[6%] bg-[#702C3E] rounded-full"></div>
         </div>
 
         {/* Header Text */}
-        <h2 className="text-2xl md:text-3xl font-semibold text-[#491A26] mb-2">
+        <h2 className="text-3xl md:text-4xl font-bold text-[#491A26] mb-2">
           Your Basics
         </h2>
-        <p className="text-sm text-[#5A4A4A] mb-8">
+        <p className="text-sm md:text-base text-[#5A4A4A] font-medium mb-8">
           Let’s collect the essential details about you.
         </p>
 
         {/* Form Fields */}
-        <div className="flex flex-col gap-6">
+  <div className="flex flex-col gap-6 px-0 md:px-0">
 
           {/* Display Name */}
           <div>
-            <label className="text-sm text-[#491A26] block mb-1">Display Name*</label>
+            <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Display Name*</label>
             <input
               type="text"
               placeholder="Enter Display Name"
-              className="w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
             />
           </div>
 
           {/* Full Name */}
           <div>
-            <label className="text-sm text-[#491A26] block mb-1">Full Name*</label>
+            <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Full Name*</label>
             <input
               type="text"
               placeholder="Enter Full Name"
-              className="w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
             />
           </div>
 
           {/* Age */}
           <div>
-            <label className="text-sm text-[#491A26] block mb-1">Age*</label>
+            <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Age*</label>
             <input
               type="number"
               placeholder="Enter Age"
-              className="w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
             />
           </div>
 
           {/* Image Upload Section */}
           <div className="flex flex-col items-center mt-6">
-            <p className="self-start text-sm text-[#491A26] mb-3">Upload your photos</p>
+            <p className="self-start text-sm text-[#491A26] mb-2 font-medium">Upload your photos</p>
 
             {/* Upload Grid */}
             <div className="grid grid-cols-3 gap-4">

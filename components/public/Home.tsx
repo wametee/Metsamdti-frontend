@@ -29,12 +29,12 @@ export default function Home() {
 
             {/* 1) TOP BLOCK: title + subtitle (stacked column) */}
             <div className="text-center">
-              <h1 className="text-[34px] sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.02] text-[#702C3E]">
+              <h1 className="text-[34px] sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.02] text-[#702C3E]">
                 Metsamdti — Soulmates,<br />
-                <span className="text-[#702C3E]">Partner for Life</span>
+                <span className="text-[#702C3E] font-bold">Partner for Life</span>
               </h1>
 
-              <p className="mx-auto mt-6 max-w-2xl text-regular text-left sm:text-lg md:text-xl leading-relaxed text-[#2F2E2E]">
+              <p className="mx-auto mt-6 max-w-2xl text-regular text-left sm:text-lg md:text-xl leading-relaxed text-[#2F2E2E] font-medium">
                 A guided matchmaking website for those who seek a lifelong partner, not casual dating.
               </p>
             </div>
@@ -104,7 +104,7 @@ export default function Home() {
       <section className="w-full max-w-6xl mx-auto mt-20 px-6 relative">
 
       {/* Header */}
-      <h2 className="text-[#702C3E] font-title font-semibold text-3xl md:text-4xl mb-6">
+      <h2 className="text-[#702C3E] font-title font-bold text-3xl md:text-4xl mb-6">
         How Metsamdti Works
       </h2>
 
@@ -128,11 +128,11 @@ export default function Home() {
   <div className="relative flex flex-col gap-6 md:pl-6 min-h-[520px] md:min-h-[640px]">
 
           {/* Card 1 */}
-          <div className="md:absolute md:top-7 md:-left-48 md:z-40 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+            <div className="md:absolute md:top-7 md:-left-48 md:z-40 flex items-center md:items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
                           rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
-                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+                          p-4 w-[98%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
             <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">01</span>
-            <div>
+            <div className="md:self-center">
               <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We ask the hard questions
               </h3>
@@ -143,11 +143,11 @@ export default function Home() {
           </div>
 
           {/* Card 2 */}
-          <div className="md:absolute md:top-40 md:-left-30 md:z-30 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+          <div className="md:absolute md:top-40 md:-left-30 md:z-30 flex items-center md:items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
                          rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
-                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+                          p-4 w-[98%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
             <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">02</span>
-            <div>
+            <div className="md:self-center">
               <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We check backgrounds carefully
               </h3>
@@ -158,11 +158,11 @@ export default function Home() {
           </div>
 
           {/* Card 3 */}
-          <div className="md:absolute md:top-75 md:-left-10 md:z-20 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+          <div className="md:absolute md:top-75 md:-left-10 md:z-20 flex items-center md:items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
                         rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
-                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+                          p-4 w-[98%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
             <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">03</span>
-            <div>
+            <div className="md:self-center">
               <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We curate matches for you
               </h3>
@@ -173,11 +173,11 @@ export default function Home() {
           </div>
 
           {/* Card 4 */}
-          <div className="md:absolute md:top-110 md:left-0 md:z-10 flex items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
+          <div className="md:absolute md:top-110 md:left-0 md:z-10 flex items-center md:items-start gap-4 bg-white/90 border border-[#EBD9D8] shadow-md 
                           rounded-tl-[20px] rounded-br-[20px] rounded-tr-[20px] rounded-bl-[20px]
-                          p-4 w-[92%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
+                          p-4 w-[98%] sm:w-[420px] md:w-[576px] min-h-[100px] md:min-h-[110px]">
             <span className="text-[#702C3E99] font-title font-regular text-[36px] md:text-[48px]">04</span>
-            <div>
+            <div className="md:self-center">
               <h3 className="text-[#702C3E] font-title font-regular text-lg">
                 We prevent heartbreak
               </h3>
@@ -196,7 +196,7 @@ export default function Home() {
         <section className="w-full max-w-6xl mx-auto mt-28 px-6">
           {/* Header */}
           <div className="text-center mb-14">
-            <h2 className="text-[#702C3E] font-title font-semibold text-3xl md:text-4xl leading-tight">
+            <h2 className="text-[#702C3E] font-title font-bold text-3xl md:text-4xl leading-tight">
               What set’s us apart?
             </h2>
             <p className="mt-4 text-sm md:text-base text-left text-[#2F2E2E] max-w-xl mx-auto leading-relaxed font-regular">

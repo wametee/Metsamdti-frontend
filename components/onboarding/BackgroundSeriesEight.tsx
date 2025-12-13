@@ -41,16 +41,14 @@ export default function BackgroundSeriesEight() {
       </div>
 
       {/* Outer Card */}
-      <div
-        className="
-          w-full max-w-3xl
-          bg-[#EDD4D3]
-          border-2 border-white
-          rounded-2xl
-          py-10 px-6 md:px-12
-          shadow-md
-        "
-      >
+      <div className="
+        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
+        bg-[#EDD4D3] 
+        border-2 border-white 
+        rounded-2xl 
+        py-10 px-6 md:px-20
+        shadow-md 
+      ">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6">
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
@@ -62,25 +60,25 @@ export default function BackgroundSeriesEight() {
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl md:text-3xl font-semibold text-[#491A26] mb-3">
+         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
           Faith, Culture & Vision
         </h2>
 
         {/* Subtitle */}
-        <p className="text-sm text-[#5A4A4A] max-w-lg mb-10 leading-relaxed">
+               <p className="text-sm text-[#5A4A4A] max-w-lg mb-6 leading-relaxed font-medium">
           What you believe, where you come from, and where you’re going all tell a deeper story.
           Recognizing that story is the first step toward finding someone who moves through the world
           with a similar heartbeat.
         </p>
 
         {/* FORM CARD */}
-        <div className="p-6 md:p-8 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* FIRST SERIES */}
           <div className="flex flex-col gap-4">
-            <p className="text-[#5A5959] font-normal text-[18px]">I like hearing different perspectives.</p>
+            <p className="text-[#5A5959] text-sm font-medium">I like hearing different perspectives.</p>
 
-            <label className="text-sm text-[#491A26]">
+            <label className="text-base text-[#491A26] font-semibold">
               How important is faith or spirituality in your life?
             </label>
 
@@ -110,9 +108,9 @@ export default function BackgroundSeriesEight() {
 
           {/* SECOND SERIES */}
           <div className="flex flex-col gap-4">
-            <p className="text-[#5A5959] font-normal text-[18px]">And...</p>
+            <p className="text-[#5A5959] text-sm font-medium">And...</p>
 
-            <label className="text-sm text-[#491A26]">
+            <label className="text-base text-[#491A26] font-semibold">
               What are your thoughts on gender roles within a marriage?
             </label>
 

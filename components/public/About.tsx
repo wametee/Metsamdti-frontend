@@ -28,11 +28,11 @@ export default function About() {
 
           {/* TEXT OVERLAY */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
-            <h1 className="text-4xl md:text-6xl font-title font-semibold drop-shadow-lg">
+            <h1 className="text-4xl md:text-6xl font-title font-bold drop-shadow-lg">
               About us
             </h1>
 
-            <p className="mt-4 max-w-2xl text-sm md:text-lg font-light opacity-90">
+            <p className="mt-4 max-w-2xl text-sm md:text-lg font-medium opacity-90">
               Learn how we ensure connections rooted in values, creating meaningful relationships—not dating experiences.
             </p>
           </div>
@@ -48,7 +48,7 @@ export default function About() {
         OUR STORY
       </p>
 
-      <h2 className="text-3xl md:text-5xl font-title font-semibold text-[#3A1F1F] mb-6">
+      <h2 className="text-3xl md:text-5xl font-title font-bold text-[#3A1F1F] mb-6">
         ABOUT METSAMDTI
       </h2>
 

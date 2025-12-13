@@ -1,3 +1,4 @@
+
 "use client";
 
 import { ImCancelCircle } from "react-icons/im";
@@ -29,9 +30,9 @@ export default function EmotionalCompleteModal({
         aria-hidden
       />
 
-      {/* Modal Card */}
-      <div className="relative bg-white rounded-2xl max-w-2xl w-full mx-4 p-8 pt-12 shadow-lg z-10">
-        {/* Cancel icon top-right */}
+  {/* Modal Card */}
+  <div className="relative bg-white rounded-xl max-w-[660px] w-full mx-4 p-10 text-center shadow-[0_8px_30px_rgba(0,0,0,0.08)] z-10">
+        {/* Cancel icon top-right (moved out a bit from the title) */}
         <button
           onClick={onClose}
           className="absolute right-6 top-6 text-[#702C3E] hover:text-[#5E2333]"
@@ -41,24 +42,24 @@ export default function EmotionalCompleteModal({
         </button>
 
         {/* Title */}
-        <h3 className="text-xl md:text-2xl font-semibold text-[#491A26] text-center mb-4">
+        <h3 className="text-2xl md:text-3xl font-bold text-black text-center mb-4">
           Thank you for reflecting with honesty.
         </h3>
 
         {/* Message */}
-        <p className="text-sm text-[#5A4A4A] text-center mb-6 leading-relaxed">
-          Your emotional patterns help us understand the language of your heart — and guide us in
+        <p className="text-sm sm:text-base text-[#5A4A4A] max-w-md mx-auto text-left mb-6 leading-relaxed font-medium">
+         Your emotional patterns help us understand the language of your heart — and guide us in
           finding someone who resonates with your rhythm.
         </p>
 
-        {/* Submit button */}
+        {/* Submit button (styled like other Next buttons) */}
         <div className="flex justify-center">
           <button
             onClick={() => {
               if (onSubmit) onSubmit();
               else onClose();
             }}
-            className="bg-[#702C3E] text-white px-8 py-3 rounded-md flex items-center gap-2 hover:bg-[#5E2333] transition"
+            className="bg-[#702C3E] text-white text-sm font-semibold px-8 py-3 rounded-md flex items-center gap-2 hover:bg-[#5E2333] transition"
           >
             Submit <FiArrowUpRight className="w-4 h-4" />
           </button>
