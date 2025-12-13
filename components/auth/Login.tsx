@@ -8,7 +8,7 @@ import { FiMail, FiLock } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 
-export default function Signup() {
+export default function Login() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -49,7 +49,7 @@ export default function Signup() {
 
         {/* Title */}
         <h2 className="text-2xl font-semibold text-center text-[#491A26] mb-8">
-          Create Application
+         Login
         </h2>
 
         {/* Form */}
@@ -93,24 +93,6 @@ export default function Signup() {
             />
           </div>
 
-          {/* Confirm Password */}
-          <div className="relative">
-            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="
-                w-full bg-[#F6E7EA]
-                border border-[#E4D6D6]
-                rounded-md
-                py-3 pl-11 pr-4
-                text-sm text-black
-                outline-none
-              "
-            />
-          </div>
 
           {/* Sign Up Button */}
           <button
@@ -121,7 +103,7 @@ export default function Signup() {
               hover:bg-[#5E2333] transition
             "
           >
-            Sign Up <FiArrowUpRight className="w-4 h-4" />
+            Sign in <FiArrowUpRight className="w-4 h-4" />
           </button>
 
           {/* Divider */}
@@ -146,12 +128,12 @@ export default function Signup() {
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">
-            Already have an account?{" "}
+            Dont have an account?{" "}
             <span
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/Signup")}
               className="text-[#702C3E] cursor-pointer hover:underline"
             >
-              Log in
+              Sign up
             </span>
           </p>
         </div>

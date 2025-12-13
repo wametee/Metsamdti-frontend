@@ -52,7 +52,7 @@ export default function CompleteApplication() {
         {/* Continue Button */}
         <button
           type="button"
-          onClick={() => router.push('/onboarding/emotional-series-one')}
+          onClick={() => router.push('/signup')}
           className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-6 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
         >
             Complete Application
