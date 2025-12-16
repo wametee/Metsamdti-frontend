@@ -102,6 +102,7 @@ export default function Login() {
               flex items-center justify-center gap-2
               hover:bg-[#5E2333] transition
             "
+            onClick={() => router.push('/match-time')}
           >
             Sign in <FiArrowUpRight className="w-4 h-4" />
           </button>
