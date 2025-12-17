@@ -8,6 +8,7 @@ import { FiArrowUpRight } from 'react-icons/fi';
 import Image from 'next/image';
 import { IoMdAdd } from 'react-icons/io';
 import logo from '@/assets/logo2.png';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function Basics() {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function Basics() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
       </div>
       
       {/* White Outer Card: slightly wider on medium (laptop) screens */}

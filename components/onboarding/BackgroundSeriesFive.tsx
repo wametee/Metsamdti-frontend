@@ -6,6 +6,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function BackgroundSeriesFive() {
   const router = useRouter();
@@ -29,9 +30,9 @@ export default function BackgroundSeriesFive() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
-      </div>
+        <div className="absolute right-6 top-6">
+          <LanguageSwitcher />
+        </div>
 
       {/* Outer Card */}
       <div className="

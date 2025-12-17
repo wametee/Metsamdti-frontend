@@ -6,10 +6,12 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function BackgroundSeriesThree() {
   const router = useRouter();
   const [education, setEducation] = useState("");
+  const [occupation, setOccupation] = useState("");
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -25,8 +27,8 @@ export default function BackgroundSeriesThree() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
       </div>
 
       {/* Outer Card */}
@@ -168,14 +170,16 @@ export default function BackgroundSeriesThree() {
               Tell us your occupation or field of work.
             </label>
 
-            <input
-              type="text"
-              placeholder="Short answer"
+            <textarea
+              placeholder="Briefly describe your role, company, or field"
+              value={occupation}
+              onChange={(e) => setOccupation(e.target.value)}
+              rows={4}
               className="
                 w-full md:w-3/4
                 bg-[#F6E7EA] border border-[#E4D6D6]
                 rounded-md py-3 px-4
-                text-sm text-black outline-none
+                text-sm text-black outline-none resize-y min-h-24
               "
             />
           </div>

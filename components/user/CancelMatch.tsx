@@ -1,11 +1,24 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
 import logo from "@/assets/logo2.png";
+import { FaHeart } from "react-icons/fa"
+import CancelMatchModal from "@/components/modal/CancelMatchModal";
 
 export default function CancelMatch() {
+  const router = useRouter();
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+
+  function handleCancelSubmit() {
+    // close modal then navigate
+    setIsCancelOpen(false);
+    router.push('/find-another-match');
+  }
+
   return (
     <section className="min-h-screen w-full bg-[#F0DBDA] flex flex-col relative">
 
@@ -44,10 +57,10 @@ export default function CancelMatch() {
       <main className="flex-1 flex flex-col items-center justify-center text-center px-6">
 
         {/* Hearts */}
-        <div className="relative mb-10">
-          <div className="w-20 h-20 bg-[#E6BFC2] rounded-full absolute -left-6"></div>
-          <div className="w-16 h-16 bg-[#702C3E] rounded-full relative z-10"></div>
-        </div>
+        <div className="relative mb-6">
+                 <FaHeart className="text-[#E7B7B4] w-16 h-16" />
+                 <FaHeart className="text-[#702C3E] w-10 h-10 absolute -right-3 top-3" />
+               </div>
 
         {/* Text */}
         <h1 className="font-title font-semibold text-[#2F2E2E] text-xl md:text-2xl mb-3">
@@ -61,7 +74,7 @@ export default function CancelMatch() {
 
         {/* CTA */}
         <button
-          onClick={() => { window.location.href = '/find-another-match'; }}
+          onClick={() => setIsCancelOpen(true)}
           className="flex items-center gap-2 bg-[#702C3E] text-white px-8 py-3 rounded-sm text-sm font-medium hover:bg-[#702C3E]/90 transition"
         >
           Cancel Match
@@ -76,6 +89,13 @@ export default function CancelMatch() {
         <span className="underline cursor-pointer">Terms of Service</span> and{" "}
         <span className="underline cursor-pointer">Privacy Policy</span>
       </p>
+
+      {/* Cancel confirmation modal */}
+      <CancelMatchModal
+        isOpen={isCancelOpen}
+        onClose={() => setIsCancelOpen(false)}
+        onSubmit={handleCancelSubmit}
+      />
 
     </section>
   );

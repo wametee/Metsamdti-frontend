@@ -25,7 +25,7 @@ export default function PerfectMatch() {
 
   useEffect(() => {
     if (secondsLeft <= 0) {
-      router.push('/cancel-match');
+      router.push('/accept-match');
     }
   }, [secondsLeft, router]);
 

@@ -7,11 +7,13 @@ import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { FiArrowUpRight } from 'react-icons/fi';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function BackgroundSeriesOne() {
   const router = useRouter();
   const [gender, setGender] = useState<string>('');
   const [languages, setLanguages] = useState<string>('');
+  const [birthday, setBirthday] = useState<string>('');
 
   return (
    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -27,8 +29,8 @@ export default function BackgroundSeriesOne() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
       </div>
 
       {/* Outer Card */}
@@ -70,14 +72,16 @@ export default function BackgroundSeriesOne() {
           <p className="text-[#5A5959] font-medium text-base mb-0">Hello! Just for context.</p>
           <div className="flex flex-col gap-2">
               <label className="text-base text-[#491A26] mb-2 font-semibold">
-              How old are you?
+              What's your birthday?
             </label>
             <input
-              type="number"
-              placeholder="Enter your age"
+              type="date"
+              aria-label="Your birthday"
+              value={birthday}
+              onChange={(e) => setBirthday(e.target.value)}
               className="w-full md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
             />
-        
+            <p className="text-xs text-[#6B5B5B] mt-1">Select your birth date — tap the field to open the calendar.</p>
           </div>
 
 

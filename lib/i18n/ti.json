@@ -9,5 +9,16 @@
     "title": "እንኳን ደህና መጡ እስከ መታሰምዲ",
     "subtitle": "የግላዊ፣ የጋብቻ ዕድል የሚያገኝ መድረክ"
   }
+  ,
+  "auth": {
+    "createApplication": "ተመዝግብ",
+    "emailPlaceholder": "ኢሜይል",
+    "passwordPlaceholder": "የሚስጥር ቁጥር",
+    "confirmPasswordPlaceholder": "የሚስጥር ቁጥር ያረጋግጡ",
+    "signupButton": "ተመዝግብ",
+    "continueWithGoogle": "በGoogle ይቀጥሉ",
+    "alreadyHaveAccount": "ከዚህ በፊት መለያ አለዎት?",
+    "loginLink": "ግባ"
+  }
 }
 

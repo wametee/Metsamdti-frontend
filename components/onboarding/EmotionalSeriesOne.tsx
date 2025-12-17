@@ -6,6 +6,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function EmotionalSeriesOne() {
   const router = useRouter();
@@ -43,8 +44,8 @@ export default function EmotionalSeriesOne() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
       </div>
 
       {/* Outer Card */}

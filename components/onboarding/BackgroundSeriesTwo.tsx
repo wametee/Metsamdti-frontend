@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { FiArrowUpRight } from "react-icons/fi";
 
 export default function BackgroundSeriesTwo() {
   const router = useRouter();
   const [living, setLiving] = useState<string>("");
+  const [bornRaised, setBornRaised] = useState<string>("");
 
   return (
  <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -24,10 +26,10 @@ export default function BackgroundSeriesTwo() {
          <FaArrowLeft className="w-5 h-5" />
        </button>
  
-       {/* Language Switcher */}
-       <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-         EN ▾
-       </div>
+      {/* Language Switcher */}
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
+      </div>
 
       {/* Outer Card */}
       <div className="
@@ -188,16 +190,18 @@ export default function BackgroundSeriesTwo() {
               Where were you born and raised?
             </label>
 
-            <input
-              type="text"
-              placeholder="Short answer"
+            <textarea
+              placeholder="Tell us the city, region or stories you'd like to share"
+              value={bornRaised}
+              onChange={(e) => setBornRaised(e.target.value)}
+              rows={4}
               className="
                 w-full md:w-3/4
                 bg-[#F6E7EA]
                 border border-[#E4D6D6]
                 rounded-md py-3 px-4
                 text-sm text-black
-                outline-none
+                outline-none resize-y min-h-24
               "
             />
           </div>

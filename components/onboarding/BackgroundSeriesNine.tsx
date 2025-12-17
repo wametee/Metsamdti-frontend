@@ -6,6 +6,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { useState as useStateLocal } from "react";
 import OnboardingCompleteModal from "../modal/OnboardingCompleteModal";
 
@@ -30,8 +31,8 @@ export default function BackgroundSeriesNine() {
         </button>
   
         {/* Language Switcher */}
-        <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-          EN ▾
+        <div className="absolute right-6 top-6">
+          <LanguageSwitcher />
         </div>
 
       {/* Outer Card */}
@@ -104,12 +105,12 @@ export default function BackgroundSeriesNine() {
 
             <label className="text-base text-[#491A26]">How do you envision your future family life?</label>
 
-            <input
-              type="text"
-              placeholder="Short answer"
+            <textarea
+              placeholder="Describe how you see family life — values, routines, or hopes"
               value={futureFamily}
               onChange={(e) => setFutureFamily(e.target.value)}
-              className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              rows={5}
+              className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none resize-y min-h-24"
             />
           </div>
 
@@ -119,12 +120,12 @@ export default function BackgroundSeriesNine() {
 
             <label className="text-base text-[#491A26]">What is your biggest relationship deal-breaker?</label>
 
-            <input
-              type="text"
-              placeholder="Short answer"
+            <textarea
+              placeholder="What would make you end a relationship?"
               value={dealBreaker}
               onChange={(e) => setDealBreaker(e.target.value)}
-              className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              rows={4}
+              className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none resize-y min-h-24"
             />
           </div>
 

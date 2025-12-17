@@ -6,6 +6,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function BackgroundSeriesSeven() {
   const router = useRouter();
@@ -35,8 +36,8 @@ export default function BackgroundSeriesSeven() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
       </div>
 
       {/* Outer Card */}
@@ -117,14 +118,14 @@ export default function BackgroundSeriesSeven() {
               What is one thing you wish others understood about you?
             </label>
 
-            <input
-              type="text"
+            <textarea
+              placeholder="Share something meaningful — there’s room to write"
               value={understood}
               onChange={(e) => setUnderstood(e.target.value)}
-              placeholder="Short answer"
+              rows={5}
               className="
                 w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
-                rounded-md py-3 px-4 text-sm text-black outline-none
+                rounded-md py-3 px-4 text-sm text-black outline-none resize-y min-h-24
               "
             />
           </div>

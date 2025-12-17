@@ -1,49 +1,13 @@
 "use client";
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft } from 'react-icons/fa6';
 import Link from 'next/link';
 import { FiArrowUpRight } from 'react-icons/fi';
 import Image from 'next/image';
 import logo from '@/assets/logo2.png';
-import { useLanguage } from '@/components/providers/LanguageProvider';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
-function LanguageToggle() {
-  const { language, changeLanguage } = useLanguage();
-  const [open, setOpen] = useState(false);
-
-  const label = language === 'en' ? 'EN' : 'TI';
-
-  return (
-    <div className="relative" tabIndex={0} onBlur={() => setOpen(false)}>
-      <button
-        type="button"
-        onClick={() => setOpen((s) => !s)}
-        className="border border-[#E0D2D2] rounded-md px-3 py-1 cursor-pointer hover:bg-white/60 transition flex items-center gap-2 bg-white"
-      >
-        <span className="font-medium text-sm">{label}</span>
-        <span className="text-xs">▾</span>
-      </button>
-
-      {open && (
-        <div className="absolute right-0 mt-2 w-28 bg-white border border-[#E0D2D2] rounded-md shadow-sm z-30">
-          <button
-            onClick={() => { changeLanguage('en'); setOpen(false); }}
-            className="w-full text-left px-3 py-2 hover:bg-[#F6F6F6]"
-          >
-            EN
-          </button>
-          <button
-            onClick={() => { changeLanguage('ti'); setOpen(false); }}
-            className="w-full text-left px-3 py-2 hover:bg-[#F6F6F6]"
-          >
-            TI
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
+// Using shared LanguageSwitcher component for consistent behavior across the app
 
 export default function Welcome() {
   const router = useRouter();
@@ -52,7 +16,7 @@ export default function Welcome() {
     <section className="min-h-screen w-full bg-[#FCF8F8] flex flex-col md:justify-center relative">
       {/* Top Right Language Switch */}
       <div className="absolute top-6 right-6 text-sm text-[#2F2E2E]">
-        <LanguageToggle />
+        <LanguageSwitcher />
       </div>
 
       {/* Back button (top-left) */}

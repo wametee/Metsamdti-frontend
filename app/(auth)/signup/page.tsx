@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import { FiMail, FiLock } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 export default function Signup() {
   const router = useRouter();
+
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,8 +31,8 @@ export default function Signup() {
       </button>
 
       {/* Language Switcher */}
-      <div className="absolute right-6 top-6 text-[#702C3E] text-sm cursor-pointer select-none">
-        EN ▾
+      <div className="absolute right-6 top-6 z-30">
+        <LanguageSwitcher />
       </div>
 
       {/* Card */}
@@ -49,7 +53,7 @@ export default function Signup() {
 
         {/* Title */}
         <h2 className="text-2xl font-semibold text-center text-[#491A26] mb-8">
-          Create Application
+          {t('auth.createApplication')}
         </h2>
 
         {/* Form */}
@@ -60,7 +64,7 @@ export default function Signup() {
             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
             <input
               type="email"
-              placeholder="Email"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="
@@ -79,7 +83,7 @@ export default function Signup() {
             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
             <input
               type="password"
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="
@@ -98,7 +102,7 @@ export default function Signup() {
             <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
             <input
               type="password"
-              placeholder="Confirm Password"
+              placeholder={t('auth.confirmPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="
@@ -121,7 +125,7 @@ export default function Signup() {
               hover:bg-[#5E2333] transition
             "
           >
-            Sign Up <FiArrowUpRight className="w-4 h-4" />
+            {t('auth.signupButton')} <FiArrowUpRight className="w-4 h-4" />
           </button>
 
           {/* Divider */}
@@ -141,17 +145,17 @@ export default function Signup() {
               hover:bg-[#FAF3F3] transition
             "
           >
-            Continue with Google
+            {t('auth.continueWithGoogle')}
           </button>
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">
-            Already have an account?{" "}
+            {t('auth.alreadyHaveAccount')}{" "}
             <span
               onClick={() => router.push("/login")}
               className="text-[#702C3E] cursor-pointer hover:underline"
             >
-              Log in
+              {t('auth.loginLink')}
             </span>
           </p>
         </div>
