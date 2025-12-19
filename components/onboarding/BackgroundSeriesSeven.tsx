@@ -1,18 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesSeven() {
   const router = useRouter();
 
   const [loveLanguage, setLoveLanguage] = useState("");
-  const [understood, setUnderstood] = useState("");
+  const [oneThingToUnderstand, setOneThingToUnderstand] = useState("");
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setLoveLanguage(saved.loveLanguage || '');
+      setOneThingToUnderstand(saved.oneThingToUnderstand || '');
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { loveLanguage: string; oneThingToUnderstand: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesSeven(data, ''),
+    '/onboarding/background-series-eight'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loveLanguage) {
+      alert('Please select your love language');
+      return;
+    }
+    if (!oneThingToUnderstand.trim()) {
+      alert('Please tell us one thing you wish others understood about you');
+      return;
+    }
+    handleSubmit({ loveLanguage, oneThingToUnderstand }, e);
+  };
 
   const loveOptions = [
     "Words",
@@ -70,7 +103,7 @@ export default function BackgroundSeriesSeven() {
         </p>
 
         {/* FORM CARD */}
-        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* LOVE LANGUAGE */}
           <div className="flex flex-col gap-4">
@@ -119,31 +152,40 @@ export default function BackgroundSeriesSeven() {
             </label>
 
             <textarea
-              placeholder="Share something meaningful — there’s room to write"
-              value={understood}
-              onChange={(e) => setUnderstood(e.target.value)}
+              placeholder="Share something meaningful — there's room to write"
+              value={oneThingToUnderstand}
+              onChange={(e) => setOneThingToUnderstand(e.target.value)}
               rows={5}
               className="
                 w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                 rounded-md py-3 px-4 text-sm text-black outline-none resize-y min-h-24
               "
+              required
             />
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* NEXT BUTTON */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push("/onboarding/background-series-eight")}
-            className="
-              bg-[#702C3E] text-white px-8 py-3 rounded-md
-              flex items-center gap-2 hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white px-8 py-3 rounded-md
+                flex items-center gap-2 hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* FOOTER */}

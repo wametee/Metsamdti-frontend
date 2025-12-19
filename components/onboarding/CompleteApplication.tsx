@@ -1,22 +1,15 @@
-
 "use client";
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft } from 'react-icons/fa6';
 import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function CompleteApplication() {
   const router = useRouter();
 
   return (
       <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
-
-      {/* Top-right language switcher (fixed to top-right across breakpoints) */}
-      <div className="absolute top-6 right-6 z-30">
-        <LanguageSwitcher />
-      </div>
 
       {/* Top Bar */}
       <div className="w-full relative flex items-center justify-center px-6 pt-6 max-w-6xl mx-auto">

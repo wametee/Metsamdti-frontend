@@ -1,18 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function EmotionalSeriesThree() {
   const router = useRouter();
 
-  const [confidence, setConfidence] = useState("");
+  const [confidenceMoments, setConfidenceMoments] = useState("");
   const [showLove, setShowLove] = useState("");
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setConfidenceMoments(saved.confidenceMoments || '');
+      setShowLove(saved.showLove || '');
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { confidenceMoments: string; showLove: string }
+  >(
+    (data) => onboardingService.submitEmotionalSeriesThree(data, ''),
+    '/onboarding/emotional-series-four'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confidenceMoments || !showLove) {
+      alert('Please answer all questions');
+      return;
+    }
+    handleSubmit({ confidenceMoments, showLove }, e);
+  };
 
   const confidenceOptions = [
     "After completing tasks or goals",
@@ -73,7 +102,7 @@ export default function EmotionalSeriesThree() {
         </p>
 
         {/* FORM CARD */}
-        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* QUESTION 1 */}
           <div className="flex flex-col gap-4">
@@ -89,7 +118,7 @@ export default function EmotionalSeriesThree() {
               {confidenceOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setConfidence(option)}
+                  onClick={() => setConfidenceMoments(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -99,8 +128,8 @@ export default function EmotionalSeriesThree() {
                   <input
                     type="radio"
                     name="confidence"
-                    checked={confidence === option}
-                    onChange={() => setConfidence(option)}
+                    checked={confidenceMoments === option}
+                    onChange={() => setConfidenceMoments(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -144,20 +173,28 @@ export default function EmotionalSeriesThree() {
             </div>
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* NEXT BUTTON */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push("/onboarding/emotional-series-four")}
-            className="
-              bg-[#702C3E] text-white px-8 py-3 rounded-md
-              flex items-center gap-2 hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white px-8 py-3 rounded-md
+                flex items-center gap-2 hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* FOOTER */}

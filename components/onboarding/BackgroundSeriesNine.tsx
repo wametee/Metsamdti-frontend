@@ -1,21 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
-import { useState as useStateLocal } from "react";
 import OnboardingCompleteModal from "../modal/OnboardingCompleteModal";
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesNine() {
   const router = useRouter();
-  const [culturePref, setCulturePref] = useState("");
-  const [futureFamily, setFutureFamily] = useState("");
-  const [dealBreaker, setDealBreaker] = useState("");
-  const [isCompleteOpen, setIsCompleteOpen] = useStateLocal(false);
+  const [preferOwnBackground, setPreferOwnBackground] = useState<boolean | null>(null);
+  const [futureFamilyVision, setFutureFamilyVision] = useState("");
+  const [biggestDealBreaker, setBiggestDealBreaker] = useState("");
+  const [isCompleteOpen, setIsCompleteOpen] = useState(false);
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      if (saved.preferOwnBackground !== undefined) setPreferOwnBackground(saved.preferOwnBackground);
+      setFutureFamilyVision(saved.futureFamilyVision || '');
+      setBiggestDealBreaker(saved.biggestDealBreaker || '');
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { preferOwnBackground: boolean; futureFamilyVision: string; biggestDealBreaker: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesNine(data, ''),
+    '/onboarding/great-start'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (preferOwnBackground === null) {
+      alert('Please answer if you prefer a partner from your own background');
+      return;
+    }
+    if (!futureFamilyVision.trim()) {
+      alert('Please describe how you envision your future family life');
+      return;
+    }
+    if (!biggestDealBreaker.trim()) {
+      alert('Please tell us your biggest relationship deal-breaker');
+      return;
+    }
+    handleSubmit({ preferOwnBackground, futureFamilyVision, biggestDealBreaker }, e);
+    setIsCompleteOpen(true);
+  };
+
+  const handleCulturePref = (value: string) => {
+    setPreferOwnBackground(value === "Yes");
+  };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -29,11 +70,6 @@ export default function BackgroundSeriesNine() {
         >
           <FaArrowLeft className="w-5 h-5" />
         </button>
-  
-        {/* Language Switcher */}
-        <div className="absolute right-6 top-6">
-          <LanguageSwitcher />
-        </div>
 
       {/* Outer Card */}
        <div className="
@@ -67,7 +103,7 @@ export default function BackgroundSeriesNine() {
         </p>
 
         {/* FORM CONTAINER */}
-        <div className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60 rounded-xl">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* QUESTION 1 */}
           <div className="flex flex-col gap-4">
@@ -83,14 +119,16 @@ export default function BackgroundSeriesNine() {
               ].map((opt) => (
                 <label
                   key={opt.value}
-                  onClick={() => setCulturePref(opt.value)}
+                  onClick={() => handleCulturePref(opt.value)}
                   className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer hover:brightness-105 transition"
                 >
                   <input
                     type="radio"
                     name="culturePref"
-                    checked={culturePref === opt.value}
-                    onChange={() => setCulturePref(opt.value)}
+                    checked={(opt.value === "Yes" && preferOwnBackground === true) || 
+                             (opt.value === "No" && preferOwnBackground === false) ||
+                             (opt.value === "Both" && preferOwnBackground === false)}
+                    onChange={() => handleCulturePref(opt.value)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-sm text-[#491A26] ml-3">{opt.label}</span>
@@ -107,10 +145,11 @@ export default function BackgroundSeriesNine() {
 
             <textarea
               placeholder="Describe how you see family life — values, routines, or hopes"
-              value={futureFamily}
-              onChange={(e) => setFutureFamily(e.target.value)}
+              value={futureFamilyVision}
+              onChange={(e) => setFutureFamilyVision(e.target.value)}
               rows={5}
               className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none resize-y min-h-24"
+              required
             />
           </div>
 
@@ -122,24 +161,32 @@ export default function BackgroundSeriesNine() {
 
             <textarea
               placeholder="What would make you end a relationship?"
-              value={dealBreaker}
-              onChange={(e) => setDealBreaker(e.target.value)}
+              value={biggestDealBreaker}
+              onChange={(e) => setBiggestDealBreaker(e.target.value)}
               rows={4}
               className="w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none resize-y min-h-24"
+              required
             />
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* Next Button */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => setIsCompleteOpen(true)}
-            className="bg-[#702C3E] text-white px-8 py-3 rounded-md flex items-center gap-2 hover:bg-[#5E2333] transition"
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-[#702C3E] text-white px-8 py-3 rounded-md flex items-center gap-2 hover:bg-[#5E2333] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
         {/* Completion modal */}
         <OnboardingCompleteModal
           isOpen={isCompleteOpen}

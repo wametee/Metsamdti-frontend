@@ -63,19 +63,19 @@ export default function CancelMatch() {
                </div>
 
         {/* Text */}
-        <h1 className="font-title font-semibold text-[#2F2E2E] text-xl md:text-2xl mb-3">
-          Clara is in “hmm” mode
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-3">
+          Clara is in "hmm" mode
         </h1>
 
-        <p className="text-[#2F2E2E]/70 text-sm md:text-base max-w-md leading-relaxed mb-10">
-          Let’s give Clara a little time. <br />
+        <p className="text-sm md:text-base text-[#5A4A4A] max-w-md leading-relaxed font-medium mb-10">
+          Let's give Clara a little time. <br />
           Good things take a moment.
         </p>
 
         {/* CTA */}
         <button
           onClick={() => setIsCancelOpen(true)}
-          className="flex items-center gap-2 bg-[#702C3E] text-white px-8 py-3 rounded-sm text-sm font-medium hover:bg-[#702C3E]/90 transition"
+          className="flex items-center gap-2 bg-[#702C3E] text-white px-8 py-3 rounded-md text-sm font-semibold hover:bg-[#702C3E]/90 transition"
         >
           Cancel Match
           <FiArrowUpRight className="w-4 h-4" />

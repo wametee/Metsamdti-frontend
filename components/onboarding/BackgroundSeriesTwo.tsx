@@ -1,17 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { FiArrowUpRight } from "react-icons/fi";
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesTwo() {
   const router = useRouter();
-  const [living, setLiving] = useState<string>("");
-  const [bornRaised, setBornRaised] = useState<string>("");
+  const [currentLocation, setCurrentLocation] = useState<string>("");
+  const [livingSituation, setLivingSituation] = useState<string>("");
+  const [birthLocation, setBirthLocation] = useState<string>("");
+
+  // Load saved data from localStorage
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setCurrentLocation(saved.currentLocation || '');
+      setLivingSituation(saved.livingSituation || '');
+      setBirthLocation(saved.birthLocation || '');
+    }
+  }, []);
+
+  // Use the reusable submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { currentLocation: string; livingSituation: string; birthLocation: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesTwo(data, ''),
+    '/onboarding/background-series-three'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!currentLocation.trim()) {
+      alert('Please enter where you live');
+      return;
+    }
+    if (!livingSituation) {
+      alert('Please select your living situation');
+      return;
+    }
+    if (!birthLocation.trim()) {
+      alert('Please tell us where you were born and raised');
+      return;
+    }
+
+    handleSubmit({
+      currentLocation,
+      livingSituation,
+      birthLocation,
+    }, e);
+  };
 
   return (
  <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -26,10 +71,6 @@ export default function BackgroundSeriesTwo() {
          <FaArrowLeft className="w-5 h-5" />
        </button>
  
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6">
-        <LanguageSwitcher />
-      </div>
 
       {/* Outer Card */}
       <div className="
@@ -57,13 +98,11 @@ export default function BackgroundSeriesTwo() {
 
         {/* Subtitle */}
         <p className="text-sm text-[#5A4A4A] max-w-lg mb-6 leading-relaxed font-medium">
-          Every individual has a history. Share your background and upbringing so your
-          matches better understand you. These details help us match you with those
-          whose experiences complement your own.
+          Every individual has a history. Share your background and upbringing so your matches better understand you. These details help us match you with those whose experiences complement your own.
         </p>
 
         {/* Form Container */}
-        <div className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
 
           {/* WHERE DO YOU LIVE */}
           <div className="flex flex-col gap-3">
@@ -76,6 +115,8 @@ export default function BackgroundSeriesTwo() {
             <input
               type="text"
               placeholder="City and country"
+              value={currentLocation}
+              onChange={(e) => setCurrentLocation(e.target.value)}
               className="
                 w-full md:w-3/4
                 bg-[#F6E7EA]
@@ -84,6 +125,7 @@ export default function BackgroundSeriesTwo() {
                 text-sm text-black
                 outline-none
               "
+              required
             />
           </div>
 
@@ -100,7 +142,7 @@ export default function BackgroundSeriesTwo() {
             <div className="flex flex-col gap-3">
               {/* Alone */}
               <label
-                onClick={() => setLiving("Alone")}
+                onClick={() => setLivingSituation("Alone")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                   rounded-md py-3 px-4
@@ -111,8 +153,8 @@ export default function BackgroundSeriesTwo() {
                 <input
                   type="radio"
                   name="living"
-                  checked={living === "Alone"}
-                  onChange={() => setLiving("Alone")}
+                  checked={livingSituation === "Alone"}
+                  onChange={() => setLivingSituation("Alone")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3 font-medium">Alone</span>
@@ -120,7 +162,7 @@ export default function BackgroundSeriesTwo() {
 
               {/* With family */}
               <label
-                onClick={() => setLiving("With family")}
+                onClick={() => setLivingSituation("With family")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                   rounded-md py-3 px-4
@@ -131,8 +173,8 @@ export default function BackgroundSeriesTwo() {
                 <input
                   type="radio"
                   name="living"
-                  checked={living === "With family"}
-                  onChange={() => setLiving("With family")}
+                  checked={livingSituation === "With family"}
+                  onChange={() => setLivingSituation("With family")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3 font-medium">With family</span>
@@ -140,7 +182,7 @@ export default function BackgroundSeriesTwo() {
 
               {/* With roommates */}
               <label
-                onClick={() => setLiving("With roommates")}
+                onClick={() => setLivingSituation("With roommates")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                   rounded-md py-3 px-4
@@ -151,8 +193,8 @@ export default function BackgroundSeriesTwo() {
                 <input
                   type="radio"
                   name="living"
-                  checked={living === "With roommates"}
-                  onChange={() => setLiving("With roommates")}
+                  checked={livingSituation === "With roommates"}
+                  onChange={() => setLivingSituation("With roommates")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3 font-medium">With roommates</span>
@@ -160,7 +202,7 @@ export default function BackgroundSeriesTwo() {
 
               {/* Other */}
               <label
-                onClick={() => setLiving("Other")}
+                onClick={() => setLivingSituation("Other")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                   rounded-md py-3 px-4
@@ -171,8 +213,8 @@ export default function BackgroundSeriesTwo() {
                 <input
                   type="radio"
                   name="living"
-                  checked={living === "Other"}
-                  onChange={() => setLiving("Other")}
+                  checked={livingSituation === "Other"}
+                  onChange={() => setLivingSituation("Other")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3 font-medium">Other</span>
@@ -183,7 +225,7 @@ export default function BackgroundSeriesTwo() {
           {/* WHERE WERE YOU BORN */}
           <div className="flex flex-col gap-3">
             <p className="text-[#5A5959] font-medium text-sm mb-0">
-              I’d love to hear more about your story.
+              I'd love to hear more about your story.
             </p>
 
             <label className="text-base text-[#491A26] font-semibold">
@@ -192,8 +234,8 @@ export default function BackgroundSeriesTwo() {
 
             <textarea
               placeholder="Tell us the city, region or stories you'd like to share"
-              value={bornRaised}
-              onChange={(e) => setBornRaised(e.target.value)}
+              value={birthLocation}
+              onChange={(e) => setBirthLocation(e.target.value)}
               rows={4}
               className="
                 w-full md:w-3/4
@@ -203,24 +245,34 @@ export default function BackgroundSeriesTwo() {
                 text-sm text-black
                 outline-none resize-y min-h-24
               "
+              required
             />
           </div>
-        </div>
 
-        {/* Next Button */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push('/onboarding/background-series-three')}
-            className="
-              bg-[#702C3E] text-white
-              px-8 py-3 rounded-md
-              flex items-center gap-2
-              hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white
+                px-8 py-3 rounded-md
+                flex items-center gap-2
+                hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Footer */}

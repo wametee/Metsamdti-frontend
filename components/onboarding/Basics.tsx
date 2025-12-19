@@ -1,17 +1,99 @@
 "use client";
+import { useState, useEffect } from 'react';
 import upload from '@/assets/upload.png';
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft } from 'react-icons/fa6';
-import Header from '@/components/layout/Header';
-import Link from 'next/link';
 import { FiArrowUpRight } from 'react-icons/fi';
 import Image from 'next/image';
 import { IoMdAdd } from 'react-icons/io';
 import logo from '@/assets/logo2.png';
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function Basics() {
   const router = useRouter();
+  const [displayName, setDisplayName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [age, setAge] = useState<number | "">("");
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setDisplayName(saved.displayName || '');
+      setFullName(saved.fullName || '');
+      setAge(saved.age || '');
+      // Note: Photos from localStorage would need to be converted back to File objects
+      // For now, we'll just load the previews if they exist as URLs
+    }
+  }, []);
+
+  // Handle photo selection for a specific index
+  const handlePhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Update photos array at specific index
+    const newPhotos = [...photos];
+    newPhotos[index] = file;
+    setPhotos(newPhotos);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const newPreviews = [...photoPreviews];
+      newPreviews[index] = reader.result as string;
+      setPhotoPreviews(newPreviews);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove photo at specific index
+  const removePhoto = (index: number) => {
+    const newPhotos = photos.filter((_, i) => i !== index);
+    const newPreviews = photoPreviews.filter((_, i) => i !== index);
+    setPhotos(newPhotos);
+    setPhotoPreviews(newPreviews);
+  };
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { displayName: string; fullName: string; age: number; photos?: File[] }
+  >(
+    (data) => onboardingService.submitBasics(data, ''),
+    '/onboarding/background-series-one'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!displayName.trim()) {
+      alert('Display name is required');
+      return;
+    }
+    if (!fullName.trim()) {
+      alert('Full name is required');
+      return;
+    }
+    if (!age || typeof age !== "number" || age < 18 || age > 100) {
+      alert('Please enter a valid age (18-100)');
+      return;
+    }
+    if (photos.length !== 5) {
+      alert('Please upload exactly 5 photos');
+      return;
+    }
+
+    handleSubmit({
+      displayName,
+      fullName,
+      age,
+      photos: photos,
+    }, e);
+  };
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -26,11 +108,6 @@ export default function Basics() {
         <FaArrowLeft className="w-5 h-5" />
       </button>
 
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6">
-        <LanguageSwitcher />
-      </div>
-      
       {/* White Outer Card: slightly wider on medium (laptop) screens */}
       <div className="
         w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
@@ -64,7 +141,7 @@ export default function Basics() {
         </p>
 
         {/* Form Fields */}
-  <div className="flex flex-col gap-6 px-0 md:px-0">
+  <form onSubmit={onSubmit} className="flex flex-col gap-6 px-0 md:px-0">
 
           {/* Display Name */}
           <div>
@@ -72,7 +149,10 @@ export default function Basics() {
             <input
               type="text"
               placeholder="Enter Display Name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
               className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              required
             />
           </div>
 
@@ -82,7 +162,10 @@ export default function Basics() {
             <input
               type="text"
               placeholder="Enter Full Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              required
             />
           </div>
 
@@ -92,7 +175,12 @@ export default function Basics() {
             <input
               type="number"
               placeholder="Enter Age"
+              value={age}
+              onChange={(e) => setAge(e.target.value ? parseInt(e.target.value) : "")}
+              min={18}
+              max={100}
               className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              required
             />
           </div>
 
@@ -103,58 +191,155 @@ export default function Basics() {
             {/* Upload Grid */}
             <div className="grid grid-cols-3 gap-4">
 
-              {/* Main Large Image (reduced size) */}
+              {/* Main Large Image (reduced size) - shows first uploaded image */}
               <div className="col-span-3 flex justify-center">
-                <div className="w-32 h-32 rounded-xl flex items-center justify-center overflow-hidden">
-                  <Image src={upload} alt="Upload" width={128} height={128} className="object-contain" />
+                <div className="w-32 h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6]">
+                  {photoPreviews[0] ? (
+                    <Image 
+                      src={photoPreviews[0]} 
+                      alt="Main photo" 
+                      width={128} 
+                      height={128} 
+                      className="object-cover w-full h-full" 
+                    />
+                  ) : (
+                    <Image 
+                      src={upload} 
+                      alt="Upload" 
+                      width={128} 
+                      height={128} 
+                      className="object-contain" 
+                    />
+                  )}
                 </div>
               </div>
 
               {/* Five Small Upload Boxes */}
               <div className="col-span-3 grid grid-cols-3 gap-4">
-                {[1,2,3].map((i) => (
-                  <div key={i} className="flex flex-col items-center relative">
-                    <div className="w-28 h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden">
-                      <Image src={upload} alt="Upload" width={112} height={112} className="object-contain" />
+                {[0, 1, 2].map((index) => (
+                  <div key={index} className="flex flex-col items-center relative">
+                    <div className="w-28 h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative">
+                      {photoPreviews[index] ? (
+                        <>
+                          <Image 
+                            src={photoPreviews[index]} 
+                            alt={`Upload ${index + 1}`} 
+                            width={112} 
+                            height={112} 
+                            className="object-cover w-full h-full" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </>
+                      ) : (
+                        <Image 
+                          src={upload} 
+                          alt="Upload" 
+                          width={112} 
+                          height={112} 
+                          className="object-contain opacity-50" 
+                        />
+                      )}
                     </div>
-                    <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center">
+                    <label 
+                      htmlFor={`photo-upload-${index}`} 
+                      className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    >
                       <IoMdAdd className="w-4 h-4 text-[#702C3E]" />
-                    </div>
+                      <input
+                        id={`photo-upload-${index}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoChange(index, e)}
+                      />
+                    </label>
                   </div>
                 ))}
               </div>
 
               <div className="col-span-3 flex justify-center gap-4">
-                {[4,5].map((i) => (
-                  <div key={i} className="flex flex-col items-center relative">
-                    <div className="w-28 h-28 rounded-xl flex items-center justify-center overflow-hidden">
-                      <Image src={upload} alt="Upload" width={112} height={112} className="object-contain" />
+                {[3, 4].map((index) => (
+                  <div key={index} className="flex flex-col items-center relative">
+                    <div className="w-28 h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative">
+                      {photoPreviews[index] ? (
+                        <>
+                          <Image 
+                            src={photoPreviews[index]} 
+                            alt={`Upload ${index + 1}`} 
+                            width={112} 
+                            height={112} 
+                            className="object-cover w-full h-full" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </>
+                      ) : (
+                        <Image 
+                          src={upload} 
+                          alt="Upload" 
+                          width={112} 
+                          height={112} 
+                          className="object-contain opacity-50" 
+                        />
+                      )}
                     </div>
-                    <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center">
+                    <label 
+                      htmlFor={`photo-upload-${index}`} 
+                      className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    >
                       <IoMdAdd className="w-4 h-4 text-[#702C3E]" />
-                    </div>
+                      <input
+                        id={`photo-upload-${index}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoChange(index, e)}
+                      />
+                    </label>
                   </div>
                 ))}
               </div>
             </div>
+            {photos.length > 0 && photos.length < 5 && (
+              <p className="text-xs text-red-600 mt-2">Please upload exactly 5 photos ({photos.length}/5)</p>
+            )}
           </div>
-        </div>
 
-        {/* Submit Button */}
-        <div className="flex justify-center mt-10">
-          <button
-            type="button"
-            onClick={() => router.push('/onboarding/background-series-one')}
-            className="
-              bg-[#702C3E] text-white 
-              px-10 py-3 rounded-md 
-              flex items-center gap-2
-              hover:bg-[#5E2333] transition
-            "
-          >
-            Submit <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white 
+                px-10 py-3 rounded-md 
+                flex items-center gap-2
+                hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
 
         {/* Footer Text */}
         <p className="text-center text-xs text-[#6B5B5B] mt-6">

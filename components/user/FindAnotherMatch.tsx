@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
 import logo from "@/assets/logo2.png";
+import love from "@/assets/love2.png";
 
 export default function FindAnotherMatch() {
   return (
@@ -41,28 +42,30 @@ export default function FindAnotherMatch() {
       {/* ───────── Main Content ───────── */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-6">
 
-        {/* Broken Heart */}
+        {/* Love Image */}
         <div className="relative mb-10">
-          <div className="w-20 h-20 bg-[#C97A75] rounded-full relative flex items-center justify-center">
-            {/* crack */}
-            <span className="absolute text-[#702C3E] text-lg rotate-12">✕</span>
-            <span className="absolute text-[#702C3E] text-lg -rotate-12">✕</span>
-          </div>
+          <Image
+            src={love}
+            alt="Love"
+            width={160}
+            height={160}
+            className="object-contain"
+          />
         </div>
 
         {/* Text */}
-        <h1 className="font-title font-semibold text-[#2F2E2E] text-xl md:text-2xl mb-3">
-          This one didn’t click.
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-3">
+          This one didn't click.
         </h1>
 
-        <p className="text-[#2F2E2E]/70 text-sm md:text-base max-w-md leading-relaxed mb-10">
+        <p className="text-sm md:text-base text-[#5A4A4A] max-w-md leading-relaxed font-medium mb-10">
           Hold tight. We are looking for another match.
         </p>
 
         {/* CTA */}
         <button
           onClick={() => { window.location.href = '/unlock-chat'; }}
-          className="flex items-center gap-2 bg-[#702C3E] text-white px-8 py-3 rounded-sm text-sm font-medium hover:bg-[#702C3E]/90 transition"
+          className="flex items-center gap-2 bg-[#702C3E] text-white px-8 py-3 rounded-md text-sm font-semibold hover:bg-[#702C3E]/90 transition"
         >
           Find another match
           <FiArrowUpRight className="w-4 h-4" />

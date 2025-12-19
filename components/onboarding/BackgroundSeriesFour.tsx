@@ -1,18 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesFour() {
   const router = useRouter();
+  const [previouslyMarried, setPreviouslyMarried] = useState<boolean | null>(null);
+  const [hasChildren, setHasChildren] = useState<boolean | null>(null);
 
-  const [maritalStatus, setMaritalStatus] = useState("");
-  const [children, setChildren] = useState("");
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      if (saved.previouslyMarried !== undefined) setPreviouslyMarried(saved.previouslyMarried);
+      if (saved.hasChildren !== undefined) setHasChildren(saved.hasChildren);
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { previouslyMarried: boolean; hasChildren: boolean }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesFour(data, ''),
+    '/onboarding/background-series-five'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (previouslyMarried === null) {
+      alert('Please answer if you have been married before');
+      return;
+    }
+    if (hasChildren === null) {
+      alert('Please answer if you have children');
+      return;
+    }
+    handleSubmit({ previouslyMarried, hasChildren }, e);
+  };
+
+  const handleMaritalStatus = (value: string) => {
+    setPreviouslyMarried(value !== "No");
+  };
+
+  const handleChildren = (value: string) => {
+    if (value === "Prefer not to say") {
+      setHasChildren(false); // Default to false for "prefer not to say"
+    } else {
+      setHasChildren(value === "Yes");
+    }
+  };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -26,11 +69,6 @@ export default function BackgroundSeriesFour() {
       >
         <FaArrowLeft className="w-5 h-5" />
       </button>
-
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6">
-        <LanguageSwitcher />
-      </div>
 
       {/* Outer Card */}
       <div className="
@@ -64,7 +102,7 @@ export default function BackgroundSeriesFour() {
         </p>
 
         {/* FORM AREA */}
-        <div className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
 
           {/* MARRIAGE HISTORY */}
           <div className="flex flex-col gap-4">
@@ -80,7 +118,7 @@ export default function BackgroundSeriesFour() {
 
               {/* No */}
               <label
-                onClick={() => setMaritalStatus("No")}
+                onClick={() => handleMaritalStatus("No")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                   rounded-md py-3 px-4
@@ -91,8 +129,8 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="marital"
-                  checked={maritalStatus === "No"}
-                  onChange={() => setMaritalStatus("No")}
+                  checked={previouslyMarried === false}
+                  onChange={() => handleMaritalStatus("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">No</span>
@@ -100,7 +138,7 @@ export default function BackgroundSeriesFour() {
 
               {/* Divorced */}
               <label
-                onClick={() => setMaritalStatus("Divorced")}
+                onClick={() => handleMaritalStatus("Divorced")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -110,30 +148,11 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="marital"
-                  checked={maritalStatus === "Divorced"}
-                  onChange={() => setMaritalStatus("Divorced")}
+                  checked={previouslyMarried === true}
+                  onChange={() => handleMaritalStatus("Divorced")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
-                <span className="text-sm text-[#491A26] ml-3">Divorced</span>
-              </label>
-
-              {/* Widowed */}
-              <label
-                onClick={() => setMaritalStatus("Widowed")}
-                className="
-                  w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
-                  rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
-                  hover:brightness-105 transition
-                "
-              >
-                <input
-                  type="radio"
-                  name="marital"
-                  checked={maritalStatus === "Widowed"}
-                  onChange={() => setMaritalStatus("Widowed")}
-                  className="w-4 h-4 accent-[#702C3E]"
-                />
-                <span className="text-sm text-[#491A26] ml-3">Widowed</span>
+                <span className="text-sm text-[#491A26] ml-3">Yes (Divorced/Widowed)</span>
               </label>
 
             </div>
@@ -153,7 +172,7 @@ export default function BackgroundSeriesFour() {
 
               {/* No */}
               <label
-                onClick={() => setChildren("No")}
+                onClick={() => handleChildren("No")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA]
                   border border-[#E4D6D6]
@@ -164,8 +183,8 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={children === "No"}
-                  onChange={() => setChildren("No")}
+                  checked={hasChildren === false}
+                  onChange={() => handleChildren("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">No</span>
@@ -173,7 +192,7 @@ export default function BackgroundSeriesFour() {
 
               {/* Yes */}
               <label
-                onClick={() => setChildren("Yes")}
+                onClick={() => handleChildren("Yes")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA]
                   border border-[#E4D6D6]
@@ -184,8 +203,8 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={children === "Yes"}
-                  onChange={() => setChildren("Yes")}
+                  checked={hasChildren === true}
+                  onChange={() => handleChildren("Yes")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">Yes</span>
@@ -193,7 +212,7 @@ export default function BackgroundSeriesFour() {
 
               {/* Prefer not to say */}
               <label
-                onClick={() => setChildren("Prefer not to say")}
+                onClick={() => handleChildren("Prefer not to say")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA]
                   border border-[#E4D6D6]
@@ -204,8 +223,8 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={children === "Prefer not to say"}
-                  onChange={() => setChildren("Prefer not to say")}
+                  checked={hasChildren === false}
+                  onChange={() => handleChildren("Prefer not to say")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">Prefer not to say</span>
@@ -213,23 +232,30 @@ export default function BackgroundSeriesFour() {
             </div>
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* Next Button */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push('/onboarding/background-series-five')}
-            className="
-              bg-[#702C3E] text-white
-              px-8 py-3 rounded-md
-              flex items-center gap-2
-              hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
-
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white
+                px-8 py-3 rounded-md
+                flex items-center gap-2
+                hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Footer */}

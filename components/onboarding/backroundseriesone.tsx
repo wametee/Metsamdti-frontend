@@ -1,19 +1,69 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { FiArrowUpRight } from 'react-icons/fi';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesOne() {
   const router = useRouter();
   const [gender, setGender] = useState<string>('');
   const [languages, setLanguages] = useState<string>('');
   const [birthday, setBirthday] = useState<string>('');
+
+  // Load saved data from localStorage
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setGender(saved.gender || '');
+      setLanguages(saved.languages?.[0] || saved.languages || '');
+      setBirthday(saved.birthday || '');
+    }
+  }, []);
+
+  // Use the reusable submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { birthday: string; gender: string; languages: string[] }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesOne(data, ''),
+    '/onboarding/background-series-two'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!birthday) {
+      alert('Please select your birthday');
+      return;
+    }
+    if (!gender) {
+      alert('Please select your gender');
+      return;
+    }
+    if (!languages) {
+      alert('Please select how many languages you speak');
+      return;
+    }
+
+    // Convert languages to array format
+    const languagesArray = languages === 'One' ? ['One'] : 
+                          languages === 'Two' ? ['Two'] : 
+                          ['Three or more'];
+
+    handleSubmit({
+      birthday,
+      gender,
+      languages: languagesArray,
+    }, e);
+  };
 
   return (
    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -66,7 +116,7 @@ export default function BackgroundSeriesOne() {
         </p>
 
   {/* Form Container */}
-  <div className="py-6 px-0 md:py-8 md:px-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
+  <form onSubmit={onSubmit} className="py-6 px-0 md:py-8 md:px-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
 
           {/* AGE */}
           <p className="text-[#5A5959] font-medium text-base mb-0">Hello! Just for context.</p>
@@ -212,23 +262,30 @@ export default function BackgroundSeriesOne() {
   </div>
 </div>
 
-
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
         </div>
+          )}
 
         {/* Submit Button */}
         <div className="flex justify-center mt-10">
           <button
-            onClick={() => router.push('/onboarding/background-series-two')}
+              type="submit"
+              disabled={isSubmitting}
             className="
               bg-[#702C3E] text-white
               px-8 py-3 rounded-md
               flex items-center gap-2
               hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
             "
           >
-            Next  <FiArrowUpRight className="w-4 h-4" />
+              {isSubmitting ? 'Submitting...' : 'Next'}  <FiArrowUpRight className="w-4 h-4" />
           </button>
         </div>
+        </form>
       </div>
 
       {/* Footer */}

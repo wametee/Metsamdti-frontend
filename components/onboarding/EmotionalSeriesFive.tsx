@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -8,14 +8,45 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import EmotionalCompleteModal from "@/components/modal/EmotionalCompleteModal";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function EmotionalSeriesFive() {
   const router = useRouter();
 
-  const [styleSafe, setStyleSafe] = useState("");
-  const [approachNatural, setApproachNatural] = useState("");
-  const [relationshipValue, setRelationshipValue] = useState("");
+  const [communicationStyle, setCommunicationStyle] = useState("");
+  const [lifeApproach, setLifeApproach] = useState("");
+  const [valuedRelationship, setValuedRelationship] = useState("");
   const [isEmotionalCompleteOpen, setIsEmotionalCompleteOpen] = useState(false);
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setCommunicationStyle(saved.communicationStyle || '');
+      setLifeApproach(saved.lifeApproach || '');
+      setValuedRelationship(saved.valuedRelationship || '');
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { communicationStyle: string; lifeApproach: string; valuedRelationship: string }
+  >(
+    (data) => onboardingService.submitEmotionalSeriesFive(data, ''),
+    '/onboarding/complete-application'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!communicationStyle || !lifeApproach || !valuedRelationship) {
+      alert('Please answer all questions');
+      return;
+    }
+    handleSubmit({ communicationStyle, lifeApproach, valuedRelationship }, e);
+    setIsEmotionalCompleteOpen(true);
+  };
 
   const styleOptions = [
     "Direct and clear",
@@ -83,7 +114,7 @@ export default function EmotionalSeriesFive() {
         </p>
 
         {/* FORM CARD */}
-        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* QUESTION 1 */}
           <div className="flex flex-col gap-4">
@@ -99,7 +130,7 @@ export default function EmotionalSeriesFive() {
               {styleOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setStyleSafe(option)}
+                  onClick={() => setCommunicationStyle(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -109,8 +140,8 @@ export default function EmotionalSeriesFive() {
                   <input
                     type="radio"
                     name="styleSafe"
-                    checked={styleSafe === option}
-                    onChange={() => setStyleSafe(option)}
+                    checked={communicationStyle === option}
+                    onChange={() => setCommunicationStyle(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -134,7 +165,7 @@ export default function EmotionalSeriesFive() {
               {approachOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setApproachNatural(option)}
+                  onClick={() => setLifeApproach(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -144,8 +175,8 @@ export default function EmotionalSeriesFive() {
                   <input
                     type="radio"
                     name="approachNatural"
-                    checked={approachNatural === option}
-                    onChange={() => setApproachNatural(option)}
+                    checked={lifeApproach === option}
+                    onChange={() => setLifeApproach(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -168,7 +199,7 @@ export default function EmotionalSeriesFive() {
               {relationshipOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setRelationshipValue(option)}
+                  onClick={() => setValuedRelationship(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -178,8 +209,8 @@ export default function EmotionalSeriesFive() {
                   <input
                     type="radio"
                     name="relationshipValue"
-                    checked={relationshipValue === option}
-                    onChange={() => setRelationshipValue(option)}
+                    checked={valuedRelationship === option}
+                    onChange={() => setValuedRelationship(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -188,20 +219,28 @@ export default function EmotionalSeriesFive() {
             </div>
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* NEXT BUTTON */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => setIsEmotionalCompleteOpen(true)}
-            className="
-              bg-[#702C3E] text-white px-8 py-3 rounded-md
-              flex items-center gap-2 hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white px-8 py-3 rounded-md
+                flex items-center gap-2 hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Footer */}

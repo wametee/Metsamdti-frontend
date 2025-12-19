@@ -1,17 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesThree() {
   const router = useRouter();
   const [education, setEducation] = useState("");
   const [occupation, setOccupation] = useState("");
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setEducation(saved.education || '');
+      setOccupation(saved.occupation || '');
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { education: string; occupation: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesThree(data, ''),
+    '/onboarding/background-series-four'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!education) {
+      alert('Please select your education level');
+      return;
+    }
+    if (!occupation.trim()) {
+      alert('Please tell us your occupation');
+      return;
+    }
+    handleSubmit({ education, occupation }, e);
+  };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -25,11 +57,6 @@ export default function BackgroundSeriesThree() {
       >
         <FaArrowLeft className="w-5 h-5" />
       </button>
-
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6">
-        <LanguageSwitcher />
-      </div>
 
       {/* Outer Card */}
      <div className="
@@ -64,7 +91,7 @@ export default function BackgroundSeriesThree() {
         </p>
 
         {/* FORM CARD */}
-        <div className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
 
           {/* EDUCATION LEVEL */}
           <div className="flex flex-col gap-4">
@@ -184,22 +211,30 @@ export default function BackgroundSeriesThree() {
             />
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* Next Button */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push('/onboarding/background-series-four')}
-            className="
-              bg-[#702C3E] text-white
-              px-8 py-3 rounded-md
-              flex items-center gap-2
-              hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white
+                px-8 py-3 rounded-md
+                flex items-center gap-2
+                hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Footer */}

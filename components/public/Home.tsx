@@ -1,13 +1,9 @@
 import Header from '@/components/layout/Header';
 import Image from 'next/image';
-import { FiArrowUpRight } from 'react-icons/fi';
 import Footer from '@/components/layout/Footer';
 import Hero from "@/assets/hero.jpg"
 import HowItWorks from "@/assets/howitworks.png"
-import { GiJourney } from "react-icons/gi";
-import { GiMeditation } from "react-icons/gi";
-import { GiLovers } from "react-icons/gi";
-import { AiFillCaretLeft } from "react-icons/ai";
+import { FiArrowUpRight, GiJourney, GiMeditation, GiLovers, AiFillCaretLeft } from '@/lib/icons';
 
 export default function Home() {
   const questions = [
@@ -86,6 +82,7 @@ export default function Home() {
                     className="object-cover"
                     sizes="(min-width: 1024px) 430px, (min-width: 640px) 68vw, 92vw"
                     priority
+                    quality={90}
                   />
 
                   {/* optional bottom text overlay (matches your screenshot vibe) */}
@@ -117,6 +114,9 @@ export default function Home() {
                 alt="HowItWorks"
                 fill
                 className="object-cover"
+                sizes="(min-width: 768px) 460px, 100vw"
+                loading="lazy"
+                quality={85}
               />
             </div>
 

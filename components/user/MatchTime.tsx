@@ -66,21 +66,21 @@ export default function MatchTime() {
         {/* Small Circle Icon */}
         <div className="w-10 h-10 rounded-full border border-[#702C3E] mx-auto mb-6" />
 
-        <h1 className="text-black text-3xl sm:text-4xl md:text-5xl font-bold font-title mb-4">
-          It’s Match time, John
+        <h1 className="text-black text-3xl md:text-4xl font-bold mb-4">
+          It's Match time, John
         </h1>
 
-        <p className="text-[#2F2E2E] text-sm sm:text-base leading-relaxed max-w-md mx-auto font-medium mb-8 text-left">
+        <p className="text-sm md:text-base text-[#5A4A4A] leading-relaxed max-w-md mx-auto font-medium mb-8">
           Someone amazing is about to enter your life.
         </p>
 
         {/* Countdown display + Continue Button */}
         <div className="flex flex-col items-center gap-4">
-          <div className="text-sm text-[#702C3E]">Redirecting in <span className="font-semibold">{secondsLeft}</span>s</div>
+          <div className="text-sm text-[#702C3E] font-medium">Redirecting in <span className="font-semibold">{secondsLeft}</span>s</div>
           <button
             type="button"
             onClick={() => router.push('/onboarding/basics')}
-            className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-6 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
+            className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-8 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
           >
             Continue
             <FiArrowUpRight className="h-4 w-4" />

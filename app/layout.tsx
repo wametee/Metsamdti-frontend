@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import { Quicksand } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
-import { Toaster } from "@/components/ui/toaster";
+import ApiProvider from "@/components/providers/ApiProvider";
+import ToasterWrapper from "@/components/ui/ToasterWrapper";
 
+// Optimize font loading with preload and display swap
 const quicksand = Quicksand({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-quicksand",
   display: "swap",
+  preload: true,
+  fallback: ["system-ui", "arial"],
 });
 
 export const metadata: Metadata = {
@@ -23,11 +27,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" dir="ltr" className={quicksand.variable}>
+      <head>
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className={`${quicksand.className} bg-[#FCF8F8] min-h-screen`}>
-        <LanguageProvider>
-          {children}
-          <Toaster />
-        </LanguageProvider>
+        <ApiProvider>
+          <LanguageProvider>
+            {children}
+            <ToasterWrapper />
+          </LanguageProvider>
+        </ApiProvider>
       </body>
     </html>
   );

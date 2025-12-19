@@ -1,20 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesSix() {
   const router = useRouter();
 
   // State
-  const [weekend, setWeekend] = useState("");
-  const [conflict, setConflict] = useState("");
-  const [values, setValues] = useState<string[]>([]);
+  const [weekendActivities, setWeekendActivities] = useState("");
+  const [conflictHandling, setConflictHandling] = useState("");
+  const [coreValues, setCoreValues] = useState<string[]>([]);
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setWeekendActivities(saved.weekendActivities || '');
+      setConflictHandling(saved.conflictHandling || '');
+      setCoreValues(saved.coreValues || []);
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { weekendActivities: string; coreValues: string[]; conflictHandling: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesSix(data, ''),
+    '/onboarding/background-series-seven'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!weekendActivities) {
+      alert('Please select how you spend your weekends');
+      return;
+    }
+    if (coreValues.length !== 3) {
+      alert('Please select exactly 3 values');
+      return;
+    }
+    if (!conflictHandling) {
+      alert('Please select how you handle conflict');
+      return;
+    }
+    handleSubmit({ weekendActivities, coreValues, conflictHandling }, e);
+  };
 
   // List of values (pills)
   const valueOptions = [
@@ -33,11 +71,11 @@ export default function BackgroundSeriesSix() {
   ];
 
   const toggleValue = (item: string) => {
-    if (values.includes(item)) {
-      setValues(values.filter((v) => v !== item));
+    if (coreValues.includes(item)) {
+      setCoreValues(coreValues.filter((v) => v !== item));
     } else {
-      if (values.length >= 3) return; // limit to 3
-      setValues([...values, item]);
+      if (coreValues.length >= 3) return; // limit to 3
+      setCoreValues([...coreValues, item]);
     }
   };
 
@@ -89,7 +127,7 @@ export default function BackgroundSeriesSix() {
         </p>
 
         {/* MAIN FORM BODY */}
-        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* WEEKENDS */}
           <div className="flex flex-col gap-4">
@@ -111,7 +149,7 @@ export default function BackgroundSeriesSix() {
               ].map((option) => (
                 <label
                   key={option}
-                  onClick={() => setWeekend(option)}
+                  onClick={() => setWeekendActivities(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -121,8 +159,8 @@ export default function BackgroundSeriesSix() {
                   <input
                     type="radio"
                     name="weekend"
-                    checked={weekend === option}
-                    onChange={() => setWeekend(option)}
+                    checked={weekendActivities === option}
+                    onChange={() => setWeekendActivities(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-sm text-[#491A26] ml-3">{option}</span>
@@ -141,10 +179,11 @@ export default function BackgroundSeriesSix() {
 
             <div className="flex flex-wrap gap-3 mt-2">
               {valueOptions.map((item) => {
-                const active = values.includes(item);
+                const active = coreValues.includes(item);
                 return (
                   <button
                     key={item}
+                    type="button"
                     onClick={() => toggleValue(item)}
                     className={`
                       px-4 py-2 rounded-full border text-sm transition
@@ -177,7 +216,7 @@ export default function BackgroundSeriesSix() {
                 (option) => (
                   <label
                     key={option}
-                    onClick={() => setConflict(option)}
+                    onClick={() => setConflictHandling(option)}
                     className="
                       w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                       rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -187,8 +226,8 @@ export default function BackgroundSeriesSix() {
                     <input
                       type="radio"
                       name="conflict"
-                      checked={conflict === option}
-                      onChange={() => setConflict(option)}
+                      checked={conflictHandling === option}
+                      onChange={() => setConflictHandling(option)}
                       className="w-4 h-4 accent-[#702C3E]"
                     />
                     <span className="text-sm text-[#491A26] ml-3">{option}</span>
@@ -197,20 +236,29 @@ export default function BackgroundSeriesSix() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* NEXT BUTTON */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push("/onboarding/background-series-seven")}
-            className="
-              bg-[#702C3E] text-white px-8 py-3 rounded-md
-              flex items-center gap-2 hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white px-8 py-3 rounded-md
+                flex items-center gap-2 hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* FOOTER */}

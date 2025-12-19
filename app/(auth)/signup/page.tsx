@@ -1,23 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslation } from 'react-i18next';
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import { FiMail, FiLock } from "react-icons/fi";
+import { FiEye, FiEyeOff } from '@/lib/icons';
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
+import { onboardingService } from '@/services';
+import { useOnboardingSession } from '@/hooks/useOnboardingSession';
+import { useMutation } from '@tanstack/react-query';
 
 export default function Signup() {
   const router = useRouter();
-
-  const { t } = useTranslation();
+  const sessionId = useOnboardingSession();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Validation
+      if (!email || !password) {
+        throw new Error('Email and password are required');
+      }
+
+      if (password !== confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters long');
+      }
+
+      // Submit complete application with all onboarding data
+      const result = await onboardingService.completeApplication(
+        { email, password },
+        sessionId || ''
+      );
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to complete application');
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      // Redirect to login page after successful signup
+      router.push('/login');
+    },
+    onError: (error: any) => {
+      setError(error.message || 'An error occurred');
+      setIsSubmitting(false);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    mutation.mutate();
+  };
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
@@ -29,11 +79,6 @@ export default function Signup() {
       >
         <FaArrowLeft className="w-5 h-5" />
       </button>
-
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6 z-30">
-        <LanguageSwitcher />
-      </div>
 
       {/* Card */}
       <div
@@ -53,18 +98,18 @@ export default function Signup() {
 
         {/* Title */}
         <h2 className="text-2xl font-semibold text-center text-[#491A26] mb-8">
-          {t('auth.createApplication')}
+          Create Application
         </h2>
 
         {/* Form */}
-        <div className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
           {/* Email */}
           <div className="relative">
             <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
             <input
               type="email"
-              placeholder={t('auth.emailPlaceholder')}
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="
@@ -75,57 +120,88 @@ export default function Signup() {
                 text-sm text-black
                 outline-none
               "
+              required
             />
           </div>
 
           {/* Password */}
           <div className="relative">
-            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
+            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A] z-10" />
             <input
-              type="password"
-              placeholder={t('auth.passwordPlaceholder')}
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="
                 w-full bg-[#F6E7EA]
                 border border-[#E4D6D6]
                 rounded-md
-                py-3 pl-11 pr-4
+                py-3 pl-11 pr-12
                 text-sm text-black
                 outline-none
               "
+              required
+              minLength={8}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A6A6A] hover:text-[#702C3E] transition-colors z-10 p-1"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+            </button>
           </div>
 
           {/* Confirm Password */}
           <div className="relative">
-            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
+            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A] z-10" />
             <input
-              type="password"
-              placeholder={t('auth.confirmPasswordPlaceholder')}
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="
                 w-full bg-[#F6E7EA]
                 border border-[#E4D6D6]
                 rounded-md
-                py-3 pl-11 pr-4
+                py-3 pl-11 pr-12
                 text-sm text-black
                 outline-none
               "
+              required
+              minLength={8}
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A6A6A] hover:text-[#702C3E] transition-colors z-10 p-1"
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            >
+              {showConfirmPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+            </button>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Sign Up Button */}
           <button
+            type="submit"
+            disabled={isSubmitting}
             className="
               mt-4 bg-[#702C3E] text-white
               py-3 rounded-md
               flex items-center justify-center gap-2
               hover:bg-[#5E2333] transition
+              disabled:opacity-50 disabled:cursor-not-allowed
             "
           >
-            {t('auth.signupButton')} <FiArrowUpRight className="w-4 h-4" />
+            {isSubmitting ? 'Creating Account...' : 'Sign Up'} <FiArrowUpRight className="w-4 h-4" />
           </button>
 
           {/* Divider */}
@@ -145,20 +221,20 @@ export default function Signup() {
               hover:bg-[#FAF3F3] transition
             "
           >
-            {t('auth.continueWithGoogle')}
+            Continue with Google
           </button>
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">
-            {t('auth.alreadyHaveAccount')}{" "}
+            Already have an account?{" "}
             <span
               onClick={() => router.push("/login")}
               className="text-[#702C3E] cursor-pointer hover:underline"
             >
-              {t('auth.loginLink')}
+              Log in
             </span>
           </p>
-        </div>
+        </form>
       </div>
 
       {/* Footer */}

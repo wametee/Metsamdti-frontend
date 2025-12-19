@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FaArrowLeft } from "react-icons/fa6";
 import logo from "@/assets/logo2.png";
+import john from "@/assets/john.png";
+import eva from "@/assets/eva.png";
 
 export default function AcceptRejectMatch() {
   const router = useRouter();
@@ -43,55 +45,65 @@ export default function AcceptRejectMatch() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">
 
         {/* Headline */}
-        <h1 className="text-lg md:text-xl font-medium text-[#1A1A1A] mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-3">
           You have been matched with{" "}
           <span className="text-[#C6536A]">Clara</span> from{" "}
           <span className="text-[#C6536A]">Maryland</span>.
         </h1>
 
-        <p className="text-sm text-[#7A6A6A] mb-8">
-          If you both accept then it’s a match
+        <p className="text-sm md:text-base text-[#5A4A4A] max-w-lg mb-8 leading-relaxed font-medium">
+          If you both accept then it's a match
         </p>
 
         {/* MATCH VISUAL */}
         <div className="relative flex items-center justify-center mb-6">
-
-          {/* Match Badge */}
-          <div className="absolute top-[-14px] bg-[#F2E6E8] text-[#702C3E] text-xs px-3 py-1 rounded-full z-10">
-            100% Match
-          </div>
-
-          {/* Images */}
-          <div className="flex items-center gap-[-20px]">
-            <div className="w-24 h-32 md:w-28 md:h-36 rounded-tl-[40px] rounded-br-[40px] overflow-hidden shadow-md">
-              <Image
-                src="/placeholder-man.jpg"
-                alt="You"
-                width={200}
-                height={300}
-                className="w-full h-full object-cover"
-              />
+          {/* Images Container */}
+          <div className="relative flex items-center justify-center">
+            {/* John's Image (Left Heart) */}
+            <div className="relative">
+              {/* Heart-shaped container for John */}
+              <button
+                onClick={() => router.push('/user/profile/john')}
+                className="w-32 h-32 md:w-40 md:h-40 relative cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <Image
+                  src={john}
+                  alt="John"
+                  width={200}
+                  height={200}
+                  className="w-full h-full object-contain"
+                />
+              </button>
             </div>
 
-            <div className="w-24 h-32 md:w-28 md:h-36 rounded-tr-[40px] rounded-bl-[40px] overflow-hidden shadow-md -ml-6">
+            {/* Match Badge - centered between the two images */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#702C3E] text-white text-xs md:text-sm font-medium px-3 py-1.5 md:px-4 md:py-2 rounded-full z-20 shadow-md whitespace-nowrap pointer-events-none">
+              100% Match
+            </div>
+
+            {/* Eva's Image (Right Heart) */}
+            <button
+              onClick={() => router.push('/user/profile/clara')}
+              className="w-32 h-32 md:w-40 md:h-40 relative -ml-4 md:-ml-6 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <Image
-                src="/placeholder-woman.jpg"
+                src={eva}
                 alt="Clara"
                 width={200}
-                height={300}
-                className="w-full h-full object-cover"
+                height={200}
+                className="w-full h-full object-contain"
               />
-            </div>
+            </button>
           </div>
         </div>
 
         {/* INFO CARD */}
         <div className="w-full max-w-md bg-[#F4EAEA] rounded-lg px-4 py-4 mb-8 text-left">
-          <p className="text-sm text-[#702C3E] font-medium mb-1">
+          <p className="text-base text-[#491A26] font-semibold mb-1">
             Age: 30
           </p>
-          <p className="text-xs text-[#6B5B5B]">
-            You’re both in similar career fields and share the same love language.
+          <p className="text-sm text-[#5A4A4A] leading-relaxed font-medium">
+            You're both in similar career fields and share the same love language.
           </p>
         </div>
 
@@ -105,7 +117,7 @@ export default function AcceptRejectMatch() {
               border border-[#C9A7AF]
               text-[#702C3E]
               py-3 rounded-md
-              text-sm font-medium
+              text-sm font-semibold
               hover:bg-[#F2E6E8]
               transition
             "
@@ -121,7 +133,7 @@ export default function AcceptRejectMatch() {
               bg-[#702C3E]
               text-white
               py-3 rounded-md
-              text-sm font-medium
+              text-sm font-semibold
               hover:bg-[#5E2333]
               transition
             "

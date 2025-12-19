@@ -1,9 +1,7 @@
 // components/Header.tsx
 "use client";
 import { useState, useEffect } from "react";
-import { FaArrowRightLong } from "react-icons/fa6";
-import { GiHamburgerMenu } from "react-icons/gi";
-import { MdCancel } from "react-icons/md";
+import { FaArrowRightLong, GiHamburgerMenu, MdCancel } from '@/lib/icons';
 import logo from '@/assets/logo2.png';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -31,7 +29,15 @@ export default function Header() {
           <div className="col-start-1 flex items-center">
             <div className="flex items-center gap-3">
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                <Image src={logo} alt="Metsamdti" width={80} height={80} className="object-contain" />
+                <Image 
+                  src={logo} 
+                  alt="Metsamdti" 
+                  width={80} 
+                  height={80} 
+                  className="object-contain"
+                  priority
+                  quality={90}
+                />
               </div>
             </div>
           </div>

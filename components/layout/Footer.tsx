@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/logo2.png";
-import { FaTwitter, FaInstagram, FaGithub, FaLinkedinIn } from "react-icons/fa";
+import { FaTwitter, FaInstagram, FaGithub, FaLinkedinIn } from "@/lib/icons";
 
 export default function Footer() {
   return (
@@ -21,6 +21,8 @@ export default function Footer() {
                   width={36}
                   height={36}
                   className="object-contain"
+                  loading="lazy"
+                  quality={85}
                 />
               </div>
               <span className="text-sm font-medium text-[#702C3E]">

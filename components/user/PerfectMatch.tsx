@@ -72,16 +72,16 @@ export default function PerfectMatch() {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl md:text-3xl font-semibold text-black mb-3">
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-3">
           Finding Your Perfect Match.
         </h1>
 
         {/* Subtitle */}
-        <p className="text-sm md:text-base text-[#6B5B5B] max-w-md">
-          Love is a craft… we’re working carefully behind the scenes.
+        <p className="text-sm md:text-base text-[#5A4A4A] max-w-md leading-relaxed font-medium">
+          Love is a craft… we're working carefully behind the scenes.
         </p>
 
-        <div className="mt-4 text-sm text-[#702C3E]">Proceeding in <span className="font-semibold">{secondsLeft}</span>s</div>
+        <div className="mt-4 text-sm text-[#702C3E] font-medium">Proceeding in <span className="font-semibold">{secondsLeft}</span>s</div>
       </div>
 
       {/* FOOTER */}

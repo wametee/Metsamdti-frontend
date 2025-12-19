@@ -1,20 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function BackgroundSeriesFive() {
   const router = useRouter();
-
-  const [childrenPreference, setChildrenPreference] = useState("");
-  const [timeline, setTimeline] = useState("");
+  const [openToPartnerWithChildren, setOpenToPartnerWithChildren] = useState<boolean | null>(null);
+  const [idealMarriageTimeline, setIdealMarriageTimeline] = useState("");
   const [minAge, setMinAge] = useState("");
   const [maxAge, setMaxAge] = useState("");
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      if (saved.openToPartnerWithChildren !== undefined) setOpenToPartnerWithChildren(saved.openToPartnerWithChildren);
+      if (saved.idealMarriageTimeline) setIdealMarriageTimeline(saved.idealMarriageTimeline);
+      if (saved.preferredAgeRange) {
+        setMinAge(saved.preferredAgeRange.min?.toString() || '');
+        setMaxAge(saved.preferredAgeRange.max?.toString() || '');
+      }
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { openToPartnerWithChildren: boolean; preferredAgeRange: { min: number; max: number }; idealMarriageTimeline: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesFive(data, ''),
+    '/onboarding/background-series-six'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (openToPartnerWithChildren === null) {
+      alert('Please answer if you are open to a partner with children');
+      return;
+    }
+    if (!minAge || !maxAge) {
+      alert('Please enter both minimum and maximum age');
+      return;
+    }
+    if (!idealMarriageTimeline) {
+      alert('Please select your ideal timeline for marriage');
+      return;
+    }
+    handleSubmit({
+      openToPartnerWithChildren,
+      preferredAgeRange: { min: parseInt(minAge), max: parseInt(maxAge) },
+      idealMarriageTimeline,
+    }, e);
+  };
+
+  const handleChildrenPreference = (value: string) => {
+    setOpenToPartnerWithChildren(value === "Yes" || value === "Depends");
+  };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
@@ -28,11 +75,6 @@ export default function BackgroundSeriesFive() {
       >
         <FaArrowLeft className="w-5 h-5" />
       </button>
-
-      {/* Language Switcher */}
-        <div className="absolute right-6 top-6">
-          <LanguageSwitcher />
-        </div>
 
       {/* Outer Card */}
       <div className="
@@ -66,7 +108,7 @@ export default function BackgroundSeriesFive() {
         </p>
 
         {/* Form Section */}
-        <div className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-10 bg-[#EDD4D3]/60">
 
           {/* CHILDREN PREFERENCE */}
           <div className="flex flex-col gap-3">
@@ -80,7 +122,7 @@ export default function BackgroundSeriesFive() {
 
               {/* No */}
               <label
-                onClick={() => setChildrenPreference("No")}
+                onClick={() => handleChildrenPreference("No")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] 
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer 
@@ -90,8 +132,8 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={childrenPreference === "No"}
-                  onChange={() => setChildrenPreference("No")}
+                  checked={openToPartnerWithChildren === false}
+                  onChange={() => handleChildrenPreference("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">No</span>
@@ -99,7 +141,7 @@ export default function BackgroundSeriesFive() {
 
               {/* Yes */}
               <label
-                onClick={() => setChildrenPreference("Yes")}
+                onClick={() => handleChildrenPreference("Yes")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] 
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer 
@@ -109,8 +151,8 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={childrenPreference === "Yes"}
-                  onChange={() => setChildrenPreference("Yes")}
+                  checked={openToPartnerWithChildren === true}
+                  onChange={() => handleChildrenPreference("Yes")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">Yes</span>
@@ -118,7 +160,7 @@ export default function BackgroundSeriesFive() {
 
               {/* Depends */}
               <label
-                onClick={() => setChildrenPreference("Depends")}
+                onClick={() => handleChildrenPreference("Depends")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] 
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer 
@@ -128,8 +170,8 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={childrenPreference === "Depends"}
-                  onChange={() => setChildrenPreference("Depends")}
+                  checked={openToPartnerWithChildren === true}
+                  onChange={() => handleChildrenPreference("Depends")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">Depends</span>
@@ -211,7 +253,7 @@ export default function BackgroundSeriesFive() {
 
               {/* 1 year */}
               <label
-                onClick={() => setTimeline("1 year")}
+                onClick={() => setIdealMarriageTimeline("1 year")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] 
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer 
@@ -221,8 +263,8 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="timeline"
-                  checked={timeline === "1 year"}
-                  onChange={() => setTimeline("1 year")}
+                  checked={idealMarriageTimeline === "1 year"}
+                  onChange={() => setIdealMarriageTimeline("1 year")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">1 year</span>
@@ -230,7 +272,7 @@ export default function BackgroundSeriesFive() {
 
               {/* 1–2 years */}
               <label
-                onClick={() => setTimeline("1–2 years")}
+                onClick={() => setIdealMarriageTimeline("1–2 years")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] 
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer 
@@ -240,8 +282,8 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="timeline"
-                  checked={timeline === "1–2 years"}
-                  onChange={() => setTimeline("1–2 years")}
+                  checked={idealMarriageTimeline === "1–2 years"}
+                  onChange={() => setIdealMarriageTimeline("1–2 years")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">1–2 years</span>
@@ -249,7 +291,7 @@ export default function BackgroundSeriesFive() {
 
               {/* Open-ended */}
               <label
-                onClick={() => setTimeline("Open-ended")}
+                onClick={() => setIdealMarriageTimeline("Open-ended")}
                 className="
                   w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6] 
                   rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer 
@@ -259,8 +301,8 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="timeline"
-                  checked={timeline === "Open-ended"}
-                  onChange={() => setTimeline("Open-ended")}
+                  checked={idealMarriageTimeline === "Open-ended"}
+                  onChange={() => setIdealMarriageTimeline("Open-ended")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
                 <span className="text-sm text-[#491A26] ml-3">Open-ended</span>
@@ -269,20 +311,28 @@ export default function BackgroundSeriesFive() {
             </div>
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* NEXT BUTTON */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push("/onboarding/background-series-six")}
-            className="
-              bg-[#702C3E] text-white px-8 py-3 rounded-md
-              flex items-center gap-2 hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white px-8 py-3 rounded-md
+                flex items-center gap-2 hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Footer */}

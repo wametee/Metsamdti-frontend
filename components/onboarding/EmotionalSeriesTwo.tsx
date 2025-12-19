@@ -1,19 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { onboardingService } from '@/services';
+import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
+import { getOnboardingData } from '@/lib/utils/localStorage';
 
 export default function EmotionalSeriesTwo() {
   const router = useRouter();
 
-  const [peace, setPeace] = useState("");
-  const [loved, setLoved] = useState("");
-  const [connect, setConnect] = useState("");
+  const [preferredEmotionalEnergy, setPreferredEmotionalEnergy] = useState("");
+  const [feelsLoved, setFeelsLoved] = useState("");
+  const [deepConnection, setDeepConnection] = useState("");
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setPreferredEmotionalEnergy(saved.preferredEmotionalEnergy || '');
+      setFeelsLoved(saved.feelsLoved || '');
+      setDeepConnection(saved.deepConnection || '');
+    }
+  }, []);
+
+  // Use submit hook
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { preferredEmotionalEnergy: string; feelsLoved: string; deepConnection: string }
+  >(
+    (data) => onboardingService.submitEmotionalSeriesTwo(data, ''),
+    '/onboarding/emotional-series-three'
+  );
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!preferredEmotionalEnergy || !feelsLoved || !deepConnection) {
+      alert('Please answer all questions');
+      return;
+    }
+    handleSubmit({ preferredEmotionalEnergy, feelsLoved, deepConnection }, e);
+  };
 
   const peaceOptions = [
     "A calm, steady partner",
@@ -79,7 +109,7 @@ export default function EmotionalSeriesTwo() {
         </p>
 
         {/* FORM CARD */}
-        <div className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
+        <form onSubmit={onSubmit} className="p-0 md:p-0 flex flex-col gap-12 bg-[#EDD4D3]/60 rounded-xl">
 
           {/* QUESTION 1 */}
           <div className="flex flex-col gap-4">
@@ -96,7 +126,7 @@ export default function EmotionalSeriesTwo() {
               {peaceOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setPeace(option)}
+                  onClick={() => setPreferredEmotionalEnergy(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -106,8 +136,8 @@ export default function EmotionalSeriesTwo() {
                   <input
                     type="radio"
                     name="peace"
-                    checked={peace === option}
-                    onChange={() => setPeace(option)}
+                    checked={preferredEmotionalEnergy === option}
+                    onChange={() => setPreferredEmotionalEnergy(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -131,7 +161,7 @@ export default function EmotionalSeriesTwo() {
               {lovedOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setLoved(option)}
+                  onClick={() => setFeelsLoved(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -141,8 +171,8 @@ export default function EmotionalSeriesTwo() {
                   <input
                     type="radio"
                     name="loved"
-                    checked={loved === option}
-                    onChange={() => setLoved(option)}
+                    checked={feelsLoved === option}
+                    onChange={() => setFeelsLoved(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -166,7 +196,7 @@ export default function EmotionalSeriesTwo() {
               {connectOptions.map((option) => (
                 <label
                   key={option}
-                  onClick={() => setConnect(option)}
+                  onClick={() => setDeepConnection(option)}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 flex items-center gap-3 cursor-pointer
@@ -176,8 +206,8 @@ export default function EmotionalSeriesTwo() {
                   <input
                     type="radio"
                     name="connect"
-                    checked={connect === option}
-                    onChange={() => setConnect(option)}
+                    checked={deepConnection === option}
+                    onChange={() => setDeepConnection(option)}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-base text-[#491A26] ml-3 font-semibold">{option}</span>
@@ -186,20 +216,28 @@ export default function EmotionalSeriesTwo() {
             </div>
           </div>
 
-        </div>
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* NEXT BUTTON */}
-        <div className="flex justify-center mt-10">
-          <button
-            onClick={() => router.push("/onboarding/emotional-series-three")}
-            className="
-              bg-[#702C3E] text-white px-8 py-3 rounded-md
-              flex items-center gap-2 hover:bg-[#5E2333] transition
-            "
-          >
-            Next <FiArrowUpRight className="w-4 h-4" />
-          </button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center mt-10">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                bg-[#702C3E] text-white px-8 py-3 rounded-md
+                flex items-center gap-2 hover:bg-[#5E2333] transition
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              {isSubmitting ? 'Submitting...' : 'Next'} <FiArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* FOOTER */}
