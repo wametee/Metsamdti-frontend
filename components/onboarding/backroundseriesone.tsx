@@ -23,7 +23,15 @@ export default function BackgroundSeriesOne() {
     const saved = getOnboardingData();
     if (saved) {
       setGender(saved.gender || '');
-      setLanguages(saved.languages?.[0] || saved.languages || '');
+      // Handle languages - could be string or string[]
+      const savedLanguages = saved.languages;
+      if (Array.isArray(savedLanguages)) {
+        setLanguages(savedLanguages[0] || '');
+      } else if (typeof savedLanguages === 'string') {
+        setLanguages(savedLanguages);
+      } else {
+        setLanguages('');
+      }
       setBirthday(saved.birthday || '');
     }
   }, []);
