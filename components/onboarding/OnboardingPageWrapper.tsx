@@ -32,3 +32,4 @@ export default function OnboardingPageWrapper({ children }: OnboardingPageWrappe
   return <>{children}</>;
 }
 
+

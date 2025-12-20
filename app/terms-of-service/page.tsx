@@ -4,3 +4,4 @@ export default function TermsOfServicePage() {
   return <TermsOfService />;
 }
 
+

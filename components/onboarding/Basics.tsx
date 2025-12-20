@@ -202,8 +202,9 @@ export default function Basics() {
       return;
     }
 
-    // Validate photos
-    const photosValidation = validatePhotos(photos, 5);
+    // Validate photos - filter out undefined values
+    const validPhotos = photos.filter((p): p is File => p !== undefined);
+    const photosValidation = validatePhotos(validPhotos, 5);
     if (!photosValidation.isValid) {
       showValidationError(photosValidation.message!);
       return;

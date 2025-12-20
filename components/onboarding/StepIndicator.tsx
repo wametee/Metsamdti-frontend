@@ -1,25 +1,31 @@
 "use client";
 
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
-import { ONBOARDING_STEPS, STEP_ORDER } from "@/lib/constants";
+import { ONBOARDING_STEPS } from "@/lib/progress/onboarding-progress.config";
 
 export function StepIndicator() {
-  const { currentStep } = useOnboardingProgress();
-  const currentStepIndex = STEP_ORDER[currentStep] - 1;
+  const { currentStep, stepInfo } = useOnboardingProgress();
+  
+  // Use stepInfo if available, otherwise calculate from currentStep
+  const currentStepIndex = currentStep 
+    ? ONBOARDING_STEPS.findIndex(step => step.route === currentStep.route)
+    : -1;
   const totalSteps = ONBOARDING_STEPS.length;
-  const progress = ((currentStepIndex + 1) / totalSteps) * 100;
+  const progress = currentStepIndex >= 0 
+    ? ((currentStepIndex + 1) / totalSteps) * 100 
+    : 0;
 
   return (
     <div className="mb-8">
       <div className="flex justify-between mb-2">
         {ONBOARDING_STEPS.map((step, index) => (
           <div
-            key={step}
+            key={step.route}
             className={`text-xs ${
               index <= currentStepIndex ? "text-blue-600" : "text-gray-400"
             }`}
           >
-            {step}
+            {step.label}
           </div>
         ))}
       </div>
