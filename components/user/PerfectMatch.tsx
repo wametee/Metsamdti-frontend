@@ -1,33 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FaHeart } from "react-icons/fa";
 import { FaArrowLeft } from 'react-icons/fa6';
+import { FiArrowUpRight } from "react-icons/fi";
 import logo from "@/assets/logo2.png";
 
 export default function PerfectMatch() {
   const router = useRouter();
-  const [secondsLeft, setSecondsLeft] = useState(10);
-  const timerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setSecondsLeft(10);
-    timerRef.current = window.setInterval(() => setSecondsLeft(s => s - 1), 1000);
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (secondsLeft <= 0) {
-      router.push('/accept-match');
-    }
-  }, [secondsLeft, router]);
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col">
@@ -77,11 +58,19 @@ export default function PerfectMatch() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-sm md:text-base text-[#5A4A4A] max-w-md leading-relaxed font-medium">
+        <p className="text-sm md:text-base text-[#5A4A4A] max-w-md leading-relaxed font-medium mb-8">
           Love is a craft… we're working carefully behind the scenes.
         </p>
 
-        <div className="mt-4 text-sm text-[#702C3E] font-medium">Proceeding in <span className="font-semibold">{secondsLeft}</span>s</div>
+        {/* Continue Button */}
+        <button
+          type="button"
+          onClick={() => router.push('/accept-match')}
+          className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-8 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
+        >
+          Continue
+          <FiArrowUpRight className="h-4 w-4" />
+        </button>
       </div>
 
       {/* FOOTER */}

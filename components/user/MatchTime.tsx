@@ -1,5 +1,4 @@
 "use client";
-import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft } from 'react-icons/fa6';
 import Image from "next/image";
@@ -9,30 +8,6 @@ import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default function MatchTime() {
   const router = useRouter();
-  const [secondsLeft, setSecondsLeft] = useState(10);
-  const timerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    // start countdown
-    setSecondsLeft(10);
-    timerRef.current = window.setInterval(() => {
-      setSecondsLeft((s) => s - 1);
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, []);
-
-  // navigate when countdown reaches 0
-  useEffect(() => {
-    if (secondsLeft <= 0) {
-      router.push('/perfect-match');
-    }
-  }, [secondsLeft, router]);
 
   return (
     <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
@@ -74,12 +49,11 @@ export default function MatchTime() {
           Someone amazing is about to enter your life.
         </p>
 
-        {/* Countdown display + Continue Button */}
+        {/* Continue Button */}
         <div className="flex flex-col items-center gap-4">
-          <div className="text-sm text-[#702C3E] font-medium">Redirecting in <span className="font-semibold">{secondsLeft}</span>s</div>
           <button
             type="button"
-            onClick={() => router.push('/onboarding/basics')}
+            onClick={() => router.push('/perfect-match')}
             className="flex items-center gap-2 mx-auto bg-[#702C3E] text-white text-sm font-semibold px-8 py-3 rounded-md hover:bg-[#702C3E]/90 transition"
           >
             Continue
