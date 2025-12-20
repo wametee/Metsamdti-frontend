@@ -9,6 +9,7 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
 
 export default function BackgroundSeriesEight() {
   const router = useRouter();
@@ -82,10 +83,8 @@ export default function BackgroundSeriesEight() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (approx 80%) */}
-        <div className="w-full h-1.5 bg-[#E7D3D1] rounded-full mb-10">
-          <div className="h-full w-[80%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
          <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">

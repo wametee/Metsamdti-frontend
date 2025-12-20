@@ -9,16 +9,40 @@ import { updateOnboardingProgress } from "@/lib/utils/localStorage";
 
 /**
  * Reusable hook for onboarding form submissions
+ * 
+ * IMPORTANT: All hooks inside this function must be called unconditionally
+ * to follow React's Rules of Hooks. This hook must always be called
+ * at the top level of a component, before any conditional returns.
+ * 
+ * This hook internally uses:
+ * - useRouter() - Next.js navigation
+ * - useOnboardingSession() - Session management (uses useState, useEffect)
+ * - useState() - Local state for isSubmitting and error
+ * - useMutation() - React Query mutation (uses useContext internally)
  */
 export function useOnboardingSubmit<T>(
   submitFn: (data: T, sessionId: string) => Promise<any>,
   nextRoute: string
 ) {
+  // ============================================================================
+  // CRITICAL: ALL HOOKS MUST BE CALLED UNCONDITIONALLY AND IN THE SAME ORDER
+  // ============================================================================
+  // Hook order must be consistent on every render:
+  // 1. useRouter()
+  // 2. useOnboardingSession() (calls useState, useEffect internally)
+  // 3. useState() for isSubmitting
+  // 4. useState() for error
+  // 5. useMutation() (calls useContext internally to access QueryClient)
+  // ============================================================================
+  
   const router = useRouter();
   const sessionId = useOnboardingSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // useMutation MUST be called unconditionally - it uses useContext internally
+  // This hook must always be called, even if the mutation won't be used
+  // Never call this conditionally or after early returns
   const mutation = useMutation({
     mutationFn: async (data: T) => {
       setIsSubmitting(true);
@@ -34,6 +58,10 @@ export function useOnboardingSubmit<T>(
         return result;
       } catch (err: any) {
         setIsSubmitting(false);
+        // Preserve suggestions if they exist
+        if (err.response?.data?.suggestions) {
+          (err as any).suggestions = err.response.data.suggestions;
+        }
         throw err;
       }
     },
@@ -48,6 +76,10 @@ export function useOnboardingSubmit<T>(
     onError: (error: any) => {
       setError(error.message || "An error occurred");
       setIsSubmitting(false);
+      // If error has suggestions, they'll be handled in the component
+      if (error.suggestions) {
+        throw error; // Re-throw to let component handle suggestions
+      }
     },
   });
 

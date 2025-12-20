@@ -10,6 +10,8 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { authService } from '@/services';
 import { useMutation } from '@tanstack/react-query';
+import { toast } from "react-toastify";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 export default function Login() {
   const router = useRouter();
@@ -40,12 +42,21 @@ export default function Login() {
       return result;
     },
     onSuccess: () => {
-      // Redirect to perfect match page after successful login
-      router.push('/perfect-match');
+      // Show success toast
+      toast.success("Login successful! Redirecting...", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      // Redirect to match-time page after successful login
+      setTimeout(() => {
+        router.push('/match-time');
+      }, 500);
     },
     onError: (error: any) => {
-      setError(error.message || 'An error occurred');
+      const errorMessage = error.message || 'An error occurred';
+      setError(errorMessage);
       setIsSubmitting(false);
+      // Error toast is already shown by the error interceptor
     },
   });
 
@@ -137,12 +148,21 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+          {/* Forgot Password Link */}
+          <div className="flex justify-end -mt-2 mb-2">
+            <button
+              type="button"
+              onClick={() => router.push('/forgot-password')}
+              className="text-xs text-[#702C3E] hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          {/* Error Message - Always render to prevent hydration mismatch */}
+          <div className={`mt-2 ${error ? 'p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm' : 'h-0 overflow-hidden'}`}>
+            {error}
+          </div>
 
           {/* Sign In Button */}
           <button
@@ -167,17 +187,7 @@ export default function Login() {
           </div>
 
           {/* Google Button */}
-          <button
-            className="
-              w-full bg-white
-              border border-[#E4D6D6]
-              py-3 rounded-md
-              text-sm text-[#491A26]
-              hover:bg-[#FAF3F3] transition
-            "
-          >
-            Continue with Google
-          </button>
+          <GoogleSignInButton />
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">

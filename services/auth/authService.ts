@@ -13,7 +13,8 @@ export interface LoginRequest {
 export interface SignupRequest {
   email: string;
   password: string;
-  displayName?: string;
+  username?: string;
+  displayName?: string; // Keep for backward compatibility
 }
 
 export interface AuthResponse {
@@ -97,6 +98,67 @@ class AuthService {
       return {
         success: false,
         message: error.message || "Failed to get user",
+      };
+    }
+  }
+
+  /**
+   * Google OAuth login/signup
+   */
+  async googleAuth(idToken: string): Promise<AuthResponse> {
+    try {
+      const response = await httpClient.post("/auth/google", { idToken });
+      
+      // Store token if provided
+      if (response.data.token && typeof window !== "undefined") {
+        localStorage.setItem("auth_token", response.data.token);
+      }
+
+      return {
+        success: true,
+        token: response.data.token,
+        user: response.data.user,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message || "Google authentication failed",
+      };
+    }
+  }
+
+  /**
+   * Get Google OAuth URL
+   */
+  async getGoogleAuthUrl(): Promise<{ success: boolean; authUrl?: string; message?: string }> {
+    try {
+      const response = await httpClient.get("/auth/google/url");
+      return {
+        success: true,
+        authUrl: response.data.authUrl,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message || "Failed to get Google auth URL",
+      };
+    }
+  }
+
+  /**
+   * Get current user's profile
+   */
+  async getCurrentUserProfile(): Promise<{ success: boolean; profile?: any; message?: string }> {
+    try {
+      const response = await httpClient.get("/auth/profile");
+      return {
+        success: true,
+        profile: response.data.profile,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message || "Failed to get user profile",
       };
     }
   }

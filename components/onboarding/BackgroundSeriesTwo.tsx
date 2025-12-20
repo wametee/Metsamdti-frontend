@@ -9,6 +9,8 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
+import { validateRequired, showValidationError, validationMessages } from '@/lib/utils/validation';
 
 export default function BackgroundSeriesTwo() {
   const router = useRouter();
@@ -38,16 +40,21 @@ export default function BackgroundSeriesTwo() {
     e.preventDefault();
     
     // Validation
-    if (!currentLocation.trim()) {
-      alert('Please enter where you live');
+    const locationValidation = validateRequired(currentLocation, 'current location');
+    if (!locationValidation.isValid) {
+      showValidationError('Please tell us where you currently live. This helps us understand your background better!');
       return;
     }
-    if (!livingSituation) {
-      alert('Please select your living situation');
+
+    const livingSituationValidation = validateRequired(livingSituation, 'living situation');
+    if (!livingSituationValidation.isValid) {
+      showValidationError('Please select your living situation. We\'d love to learn more about your lifestyle!');
       return;
     }
-    if (!birthLocation.trim()) {
-      alert('Please tell us where you were born and raised');
+
+    const birthLocationValidation = validateRequired(birthLocation, 'birth location');
+    if (!birthLocationValidation.isValid) {
+      showValidationError('Please tell us where you were born and raised. This helps us understand your cultural background!');
       return;
     }
 
@@ -86,11 +93,8 @@ export default function BackgroundSeriesTwo() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (taller and padded on md, narrower track on md/lg) */}
-             <div className="w-full md:w-11/12 lg:w-10/12 h-2 md:h-3 bg-[#F6E7EA] rounded-full mb-10 md:mb-12 px-2 ml-0">
-                 {/* 40% progress for step 2 - responsive fill widths */}
-                 <div className="h-full w-[40%] md:w-[30%] lg:w-[24%] bg-[#702C3E] rounded-full"></div>
-               </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
         {/* Title */}
        <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
           Background & Identity

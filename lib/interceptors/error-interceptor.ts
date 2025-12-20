@@ -1,4 +1,5 @@
 import { AxiosInstance, AxiosError } from "axios";
+import { toast } from "react-toastify";
 
 /**
  * Error Interceptor
@@ -21,6 +22,12 @@ const ErrorInterceptor = (httpClient: AxiosInstance) => {
           message: errorMessage,
           url: `${baseURL}${url}`,
           code: error.code,
+        });
+        
+        // Show toast notification for network errors
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 5000,
         });
         
         return Promise.reject({
@@ -50,55 +57,97 @@ const ErrorInterceptor = (httpClient: AxiosInstance) => {
       // Transform error to a consistent format
       const errorMessage = data?.message || data?.error || "An error occurred";
       
-      // Handle specific status codes
+      // Handle specific status codes and show toast notifications
+      let toastMessage = errorMessage;
+      
       switch (status) {
         case 400:
+          toastMessage = errorMessage || "Invalid request";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: errorMessage || "Invalid request",
+            message: toastMessage,
             code: "BAD_REQUEST",
             status,
             data,
           });
         case 401:
+          toastMessage = "Unauthorized. Please log in again.";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: "Unauthorized. Please log in again.",
+            message: toastMessage,
             code: "UNAUTHORIZED",
             status,
           });
         case 403:
+          toastMessage = "You don't have permission to perform this action.";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: "You don't have permission to perform this action.",
+            message: toastMessage,
             code: "FORBIDDEN",
             status,
           });
         case 404:
+          toastMessage = "Resource not found";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: "Resource not found",
+            message: toastMessage,
             code: "NOT_FOUND",
             status,
           });
         case 422:
+          toastMessage = errorMessage || "Validation error";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: errorMessage || "Validation error",
+            message: toastMessage,
             code: "VALIDATION_ERROR",
             status,
             data,
           });
         case 429:
+          toastMessage = "Too many requests. Please try again later.";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: "Too many requests. Please try again later.",
+            message: toastMessage,
             code: "RATE_LIMIT",
             status,
           });
         case 500:
+          toastMessage = "Server error. Please try again later.";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: "Server error. Please try again later.",
+            message: toastMessage,
             code: "SERVER_ERROR",
             status,
           });
         default:
+          toastMessage = errorMessage || "An unexpected error occurred";
+          toast.error(toastMessage, {
+            position: "top-right",
+            autoClose: 5000,
+          });
           return Promise.reject({
-            message: errorMessage || "An unexpected error occurred",
+            message: toastMessage,
             code: "UNKNOWN_ERROR",
             status,
             data,

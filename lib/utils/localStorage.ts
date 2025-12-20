@@ -8,7 +8,8 @@ const ONBOARDING_PROGRESS_KEY = "metsamdti_onboarding_progress";
 
 export interface OnboardingData {
   // Basics
-  displayName?: string;
+  username?: string;
+  displayName?: string; // Keep for backward compatibility
   fullName?: string;
   age?: number;
   photos?: string[];
@@ -114,6 +115,10 @@ export function saveOnboardingData(data: Partial<OnboardingData>): void {
   try {
     const existing = getOnboardingData() || {};
     const updated = { ...existing, ...data };
+    // If username is provided, also save as displayName for backward compatibility
+    if (data.username && !data.displayName) {
+      updated.displayName = data.username;
+    }
     localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updated));
   } catch (error) {
     console.error("Error saving onboarding data to localStorage:", error);

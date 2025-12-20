@@ -10,20 +10,28 @@ import logo from '@/assets/logo2.png';
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { validateRequired, validateAge, validatePhotos, showValidationError } from '@/lib/utils/validation';
+import { StepProgressBar } from './ProgressBar';
 
 export default function Basics() {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState<number | "">("");
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  // Use fixed-length arrays (5 slots) with undefined for empty slots
+  // This ensures file inputs stay aligned with their indices
+  const [photos, setPhotos] = useState<(File | undefined)[]>(Array(5).fill(undefined));
+  const [photoPreviews, setPhotoPreviews] = useState<(string | undefined)[]>(Array(5).fill(undefined));
+  const [ageError, setAgeError] = useState<string>("");
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   // Load saved data
   useEffect(() => {
     const saved = getOnboardingData();
     if (saved) {
-      setDisplayName(saved.displayName || '');
+      setUsername(saved.username || saved.displayName || ''); // Support both for backward compatibility
       setFullName(saved.fullName || '');
       setAge(saved.age || '');
       // Note: Photos from localStorage would need to be converted back to File objects
@@ -36,7 +44,7 @@ export default function Basics() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Update photos array at specific index
+    // Update photos array at specific index (maintain fixed length)
     const newPhotos = [...photos];
     newPhotos[index] = file;
     setPhotos(newPhotos);
@@ -53,45 +61,159 @@ export default function Basics() {
 
   // Remove photo at specific index
   const removePhoto = (index: number) => {
-    const newPhotos = photos.filter((_, i) => i !== index);
-    const newPreviews = photoPreviews.filter((_, i) => i !== index);
+    // Set to undefined instead of removing, to maintain fixed array length
+    const newPhotos = [...photos];
+    const newPreviews = [...photoPreviews];
+    newPhotos[index] = undefined;
+    newPreviews[index] = undefined;
+    
     setPhotos(newPhotos);
     setPhotoPreviews(newPreviews);
+    
+    // Reset the file input so user can select the same file again
+    const fileInput = document.getElementById(`photo-upload-${index}`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
-  // Use submit hook
-  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
-    { displayName: string; fullName: string; age: number; photos?: File[] }
+  // Debounced username check for real-time validation
+  useEffect(() => {
+    const checkUsernameAvailability = async () => {
+      const trimmedUsername = username.trim();
+      
+      // Don't check if username is too short (less than 3 characters)
+      if (trimmedUsername.length < 3) {
+        setShowSuggestions(false);
+        setUsernameSuggestions([]);
+        setIsCheckingUsername(false);
+        return;
+      }
+
+      setIsCheckingUsername(true);
+      setShowSuggestions(false);
+
+      try {
+        const result = await onboardingService.checkUsername(trimmedUsername);
+        
+        // Always show suggestions if available (proactive UX like Facebook/Google)
+        if (result.suggestions && result.suggestions.length > 0) {
+          setUsernameSuggestions(result.suggestions);
+          setShowSuggestions(true);
+        } else {
+          setUsernameSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } catch (error: any) {
+        console.error('Error checking username:', error);
+        // Show error but don't block user
+        setShowSuggestions(false);
+        setUsernameSuggestions([]);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    };
+
+    // Debounce the check - wait 500ms after user stops typing
+    const timeoutId = setTimeout(checkUsernameAvailability, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [username]);
+
+  // Check username uniqueness on blur (fallback)
+  const handleUsernameBlur = async () => {
+    if (!username.trim()) {
+      setShowSuggestions(false);
+      setUsernameSuggestions([]);
+      return;
+    }
+    
+    // The useEffect will handle the check, but we can also do it here as a fallback
+    if (usernameSuggestions.length === 0 && !isCheckingUsername) {
+      try {
+        const result = await onboardingService.checkUsername(username.trim());
+        if (!result.isAvailable && result.suggestions.length > 0) {
+          setUsernameSuggestions(result.suggestions);
+          setShowSuggestions(true);
+        }
+      } catch (error) {
+        // Ignore - will be checked on submit
+      }
+    }
+  };
+
+  // Custom submit function that handles username suggestions
+  const submitBasicsWithSuggestions = async (data: { username: string; fullName: string; age: number; photos?: File[] }) => {
+    try {
+      return await onboardingService.submitBasics(data, '');
+    } catch (err: any) {
+      // Check if error contains suggestions
+      if (err.response?.data?.suggestions) {
+        setUsernameSuggestions(err.response.data.suggestions);
+        setShowSuggestions(true);
+        // Throw error with suggestions attached
+        const errorWithSuggestions = new Error('This username is already taken. Please choose from the suggestions below.');
+        (errorWithSuggestions as any).suggestions = err.response.data.suggestions;
+        throw errorWithSuggestions;
+      }
+      throw err;
+    }
+  };
+
+  const { handleSubmit, isSubmitting, error: submitError } = useOnboardingSubmit<
+    { username: string; fullName: string; age: number; photos?: File[] }
   >(
-    (data) => onboardingService.submitBasics(data, ''),
+    submitBasicsWithSuggestions,
     '/onboarding/background-series-one'
   );
+
+  // Watch for errors with suggestions
+  useEffect(() => {
+    if (submitError && submitError.includes('username')) {
+      // Error message already set, suggestions will be shown if they exist
+    }
+  }, [submitError]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!displayName.trim()) {
-      alert('Display name is required');
+    // Clear suggestions
+    setShowSuggestions(false);
+    setUsernameSuggestions([]);
+    
+    // Validate username
+    const usernameValidation = validateRequired(username, 'display name');
+    if (!usernameValidation.isValid) {
+      showValidationError(usernameValidation.message!);
       return;
     }
-    if (!fullName.trim()) {
-      alert('Full name is required');
+
+    // Validate full name
+    const fullNameValidation = validateRequired(fullName, 'full name');
+    if (!fullNameValidation.isValid) {
+      showValidationError(fullNameValidation.message!);
       return;
     }
-    if (!age || typeof age !== "number" || age < 18 || age > 100) {
-      alert('Please enter a valid age (18-100)');
+
+    // Validate age
+    const ageValidation = validateAge(age);
+    if (!ageValidation.isValid) {
+      showValidationError(ageValidation.message!);
       return;
     }
-    if (photos.length !== 5) {
-      alert('Please upload exactly 5 photos');
+
+    // Validate photos
+    const photosValidation = validatePhotos(photos, 5);
+    if (!photosValidation.isValid) {
+      showValidationError(photosValidation.message!);
       return;
     }
 
     handleSubmit({
-      displayName,
+      username,
       fullName,
-      age,
-      photos: photos,
+      age: age as number,
+      photos: photos.filter((p): p is File => p !== undefined),
     }, e);
   };
 
@@ -127,10 +249,8 @@ export default function Basics() {
           />
         </div>
 
-        {/* Progress Bar (taller and padded on md, narrower on md/lg) */}
-        <div className="w-full md:w-11/12 lg:w-10/12 h-2 md:h-3 bg-[#F6E7EA] rounded-full mb-10 md:mb-12 px-2 ml-0">
-          <div className="h-full w-[14%] md:w-[8%] lg:w-[6%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Header Text */}
         <h2 className="text-3xl md:text-4xl font-bold text-[#491A26] mb-2">
@@ -149,11 +269,53 @@ export default function Basics() {
             <input
               type="text"
               placeholder="Enter Display Name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                // Don't clear suggestions immediately - let useEffect handle it
+                // This allows real-time checking as user types
+              }}
+              onBlur={handleUsernameBlur}
+              className={`w-3/4 md:w-2/3 bg-[#F6E7EA] border ${
+                showSuggestions ? "border-red-400" : isCheckingUsername ? "border-blue-400" : "border-[#E4D6D6]"
+              } rounded-md py-3 px-4 text-sm text-black outline-none`}
               required
             />
+            {isCheckingUsername && (
+              <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3 flex items-center gap-2">
+                <span className="inline-block w-3 h-3 border-2 border-[#702C3E] border-t-transparent rounded-full animate-spin"></span>
+                Checking availability...
+              </p>
+            )}
+            {!isCheckingUsername && username.trim().length >= 3 && !showSuggestions && (
+              <p className="text-xs text-green-600 mt-1 w-3/4 md:w-2/3 flex items-center gap-1">
+                <span>✓</span> Username is available
+              </p>
+            )}
+            {showSuggestions && usernameSuggestions.length > 0 && (
+              <div className="mt-2 w-3/4 md:w-2/3">
+                <p className="text-sm text-[#702C3E] mb-2 font-medium">Suggested usernames:</p>
+                <div className="flex flex-wrap gap-2">
+                  {usernameSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setUsername(suggestion);
+                        setShowSuggestions(false);
+                        setUsernameSuggestions([]);
+                      }}
+                      className="px-3 py-1.5 bg-[#702C3E] text-white text-sm rounded-md hover:bg-[#5E2333] transition shadow-sm"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {submitError && submitError.includes('username') && !showSuggestions && (
+              <p className="text-sm text-red-600 mt-2 w-3/4 md:w-2/3">{submitError}</p>
+            )}
           </div>
 
           {/* Full Name */}
@@ -176,12 +338,36 @@ export default function Basics() {
               type="number"
               placeholder="Enter Age"
               value={age}
-              onChange={(e) => setAge(e.target.value ? parseInt(e.target.value) : "")}
-              min={18}
+              onChange={(e) => {
+                const value = e.target.value ? parseInt(e.target.value) : "";
+                setAge(value);
+                if (value !== "" && typeof value === "number") {
+                  if (value < 22) {
+                    setAgeError("You must be at least 22 years old to use Metsamdti. We focus on serious relationships and require users to be 22 or older.");
+                  } else if (value > 100) {
+                    setAgeError("Please enter a valid age.");
+                  } else {
+                    setAgeError("");
+                  }
+                } else {
+                  setAgeError("");
+                }
+              }}
+              min={22}
               max={100}
-              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              className={`w-3/4 md:w-2/3 bg-[#F6E7EA] border ${
+                ageError ? "border-red-400" : "border-[#E4D6D6]"
+              } rounded-md py-3 px-4 text-sm text-black outline-none`}
               required
             />
+            {ageError && (
+              <p className="text-sm text-red-600 mt-2 w-3/4 md:w-2/3">{ageError}</p>
+            )}
+            {!ageError && age === "" && (
+              <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
+                You must be at least 22 years old to use Metsamdti.
+              </p>
+            )}
           </div>
 
           {/* Image Upload Section */}
@@ -311,15 +497,15 @@ export default function Basics() {
                 ))}
               </div>
             </div>
-            {photos.length > 0 && photos.length < 5 && (
-              <p className="text-xs text-red-600 mt-2">Please upload exactly 5 photos ({photos.length}/5)</p>
+            {photos.filter(p => p !== undefined).length > 0 && photos.filter(p => p !== undefined).length < 5 && (
+              <p className="text-xs text-red-600 mt-2">Please upload exactly 5 photos ({photos.filter(p => p !== undefined).length}/5)</p>
             )}
           </div>
 
           {/* Error Message */}
-          {error && (
+          {submitError && (
             <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-              {error}
+              {submitError}
             </div>
           )}
 

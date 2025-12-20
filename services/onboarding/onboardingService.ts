@@ -13,7 +13,7 @@ import {
  */
 
 export interface SubmitBasicsRequest {
-  displayName: string;
+  username: string;
   fullName: string;
   age: number;
   photos?: File[];
@@ -112,13 +112,39 @@ export interface OnboardingResponse {
 
 class OnboardingService {
   /**
+   * Check username availability in real-time
+   */
+  async checkUsername(username: string): Promise<{ isAvailable: boolean; suggestions: string[] }> {
+    try {
+      const response = await httpClient.get('/onboarding/check-username', {
+        params: { username },
+      });
+
+      console.log('Username check API response:', response.data); // Debug log
+
+      return {
+        isAvailable: response.data.isAvailable ?? true,
+        suggestions: response.data.suggestions || [],
+      };
+    } catch (error: any) {
+      console.error('Error checking username:', error);
+      console.error('Error response:', error.response?.data); // Debug log
+      // If error, return unavailable with suggestions if provided
+      return {
+        isAvailable: false,
+        suggestions: error.response?.data?.suggestions || [],
+      };
+    }
+  }
+
+  /**
    * Submit basics (display name, full name, age, photos)
    */
   async submitBasics(data: SubmitBasicsRequest, sessionId: string): Promise<OnboardingResponse> {
     try {
       // Save to localStorage first
       saveOnboardingData({
-        displayName: data.displayName,
+        username: data.username,
         fullName: data.fullName,
         age: data.age,
       });
@@ -145,7 +171,7 @@ class OnboardingService {
       const response = await httpClient.post(
         "/onboarding/basics",
         {
-          displayName: data.displayName,
+          displayName: data.username, // Backend expects displayName
           fullName: data.fullName,
           age: data.age,
           photos: photoUrls,

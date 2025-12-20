@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
-import { FaUserCircle } from "react-icons/fa";
-import logo from "@/assets/logo2.png";
 import { FaHeart } from "react-icons/fa"
 import CancelMatchModal from "@/components/modal/CancelMatchModal";
+import UserHeader from "./UserHeader";
 
 export default function CancelMatch() {
   const router = useRouter();
@@ -23,35 +21,7 @@ export default function CancelMatch() {
     <section className="min-h-screen w-full bg-[#F0DBDA] flex flex-col relative">
 
       {/* ───────── Header ───────── */}
-      <header className="w-full flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <Image
-            src={logo}
-            alt="Metsamdti"
-            width={32}
-            height={32}
-            className="object-contain"
-          />
-          <span className="text-[#702C3E] font-title font-semibold text-sm">
-            Metsamdti
-          </span>
-        </div>
-
-        {/* Right controls */}
-        <div className="flex items-center gap-4">
-          {/* User */}
-          <button className="flex items-center gap-2 border border-[#702C3E]/20 rounded-md px-3 py-1.5 text-sm text-[#702C3E]">
-            <FaUserCircle className="text-base" />
-            John
-          </button>
-
-          {/* Language */}
-          <button className="flex items-center gap-1 border border-[#702C3E]/20 rounded-md px-3 py-1.5 text-sm text-[#702C3E]">
-            EN
-          </button>
-        </div>
-      </header>
+      <UserHeader />
 
       {/* ───────── Main Content ───────── */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-6">

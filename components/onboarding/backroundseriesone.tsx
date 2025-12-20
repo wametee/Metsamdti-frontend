@@ -11,14 +11,55 @@ import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
+import { validateBirthday, validateRequired, showValidationError, validationMessages } from '@/lib/utils/validation';
+import { useOnboardingStepValidation } from '@/hooks/useOnboardingStepValidation';
 
 export default function BackgroundSeriesOne() {
+  // ============================================================================
+  // CRITICAL: ALL HOOKS MUST BE CALLED UNCONDITIONALLY AND IN THE SAME ORDER
+  // ============================================================================
+  // React's Rules of Hooks require:
+  // 1. Hooks must be called in the same order on every render
+  // 2. Hooks cannot be called conditionally or after early returns
+  // 3. All hooks must be called before any conditional logic
+  // 
+  // IMPORTANT: The order of hooks here is FIXED and must NEVER change.
+  // Any reordering will cause React to throw a "Rules of Hooks" error.
+  // ============================================================================
+  
+  // Hook 1: Router (Next.js navigation)
   const router = useRouter();
+  
+  // Hook 2: Step validation
+  // Internally calls: useRouter(), usePathname(), useState(), useState(), useEffect()
+  const { isValidating, isValid } = useOnboardingStepValidation();
+  
+  // Hooks 3-6: Component state (must be in this exact order)
   const [gender, setGender] = useState<string>('');
   const [languages, setLanguages] = useState<string>('');
   const [birthday, setBirthday] = useState<string>('');
+  const [ageError, setAgeError] = useState<string>("");
 
-  // Load saved data from localStorage
+  // Hook 7: Submit handler - CRITICAL: Must be called before ANY conditional returns
+  // Internally calls:
+  //   - useRouter() (duplicate, but React handles this)
+  //   - useOnboardingSession() -> useState(), useEffect()
+  //   - useState() (isSubmitting)
+  //   - useState() (error)
+  //   - useMutation() -> useContext() (accesses QueryClient)
+  // 
+  // This hook MUST be called on every render, even if we return early.
+  // If this hook is not called, React will detect a hook order mismatch.
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { birthday: string; gender: string; languages: string[] }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesOne(data, ''),
+    '/onboarding/background-series-two'
+  );
+
+  // Hook 8: Load saved data from localStorage
+  // This useEffect must be called on every render, even if we return early
   useEffect(() => {
     const saved = getOnboardingData();
     if (saved) {
@@ -36,28 +77,62 @@ export default function BackgroundSeriesOne() {
     }
   }, []);
 
-  // Use the reusable submit hook
-  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
-    { birthday: string; gender: string; languages: string[] }
-  >(
-    (data) => onboardingService.submitBackgroundSeriesOne(data, ''),
-    '/onboarding/background-series-two'
-  );
+  // ============================================================================
+  // CONDITIONAL RENDERING - ONLY AFTER ALL HOOKS HAVE BEEN CALLED
+  // ============================================================================
+  // All 8 hooks above have been called. Now we can safely do conditional returns.
+  // The key is that ALL hooks are called BEFORE any return statement.
+  
+  if (isValidating) {
+    return (
+      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
+        <div className="w-full max-w-3xl md:max-w-4xl lg:max-w-1xl bg-[#EDD4D3] border-2 border-white rounded-2xl py-10 px-6 md:px-20 shadow-md">
+          <p className="text-center text-[#702C3E]">Loading...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isValid) {
+    return null;
+  }
+
+  // Calculate age from birthday
+  const calculateAge = (birthDate: string): number | null => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!birthday) {
-      alert('Please select your birthday');
+    // Validate birthday and age
+    const birthdayValidation = validateBirthday(birthday);
+    if (!birthdayValidation.isValid) {
+      showValidationError(birthdayValidation.message!);
+      setAgeError(birthdayValidation.message!);
       return;
     }
-    if (!gender) {
-      alert('Please select your gender');
+    setAgeError("");
+
+    // Validate gender
+    const genderValidation = validateRequired(gender, 'gender');
+    if (!genderValidation.isValid) {
+      showValidationError(validationMessages.gender);
       return;
     }
-    if (!languages) {
-      alert('Please select how many languages you speak');
+
+    // Validate languages
+    const languagesValidation = validateRequired(languages, 'language preference');
+    if (!languagesValidation.isValid) {
+      showValidationError(validationMessages.languages);
       return;
     }
 
@@ -105,11 +180,8 @@ export default function BackgroundSeriesOne() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (taller and padded on md, narrower track on md/lg) */}
-      <div className="w-full md:w-11/12 lg:w-10/12 h-2 md:h-3 bg-[#F6E7EA] rounded-full mb-10 md:mb-12 px-2 ml-0">
-          {/* 40% progress for step 2 - responsive fill widths */}
-          <div className="h-full w-[40%] md:w-[30%] lg:w-[24%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
@@ -136,10 +208,41 @@ export default function BackgroundSeriesOne() {
               type="date"
               aria-label="Your birthday"
               value={birthday}
-              onChange={(e) => setBirthday(e.target.value)}
-              className="w-full md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              onChange={(e) => {
+                const selectedDate = e.target.value;
+                setBirthday(selectedDate);
+                
+                // Calculate and validate age
+                if (selectedDate) {
+                  const today = new Date();
+                  const birth = new Date(selectedDate);
+                  let age = today.getFullYear() - birth.getFullYear();
+                  const monthDiff = today.getMonth() - birth.getMonth();
+                  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                  }
+                  
+                  if (age < 22) {
+                    setAgeError("You must be at least 22 years old to use Metsamdti. We focus on serious relationships and require users to be 22 or older.");
+                  } else {
+                    setAgeError("");
+                  }
+                } else {
+                  setAgeError("");
+                }
+              }}
+              max={new Date(new Date().setFullYear(new Date().getFullYear() - 22)).toISOString().split('T')[0]}
+              className={`w-full md:w-2/3 bg-[#F6E7EA] border ${
+                ageError ? "border-red-400" : "border-[#E4D6D6]"
+              } rounded-md py-3 px-4 text-sm text-black outline-none`}
             />
-            <p className="text-xs text-[#6B5B5B] mt-1">Select your birth date — tap the field to open the calendar.</p>
+            {ageError ? (
+              <p className="text-sm text-red-600 mt-1">{ageError}</p>
+            ) : (
+              <p className="text-xs text-[#6B5B5B] mt-1">
+                Select your birth date — tap the field to open the calendar. You must be at least 22 years old to use Metsamdti.
+              </p>
+            )}
           </div>
 
 

@@ -10,6 +10,8 @@ import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
+import { validateRequired, showValidationError } from '@/lib/utils/validation';
 
 export default function BackgroundSeriesSix() {
   const router = useRouter();
@@ -39,18 +41,27 @@ export default function BackgroundSeriesSix() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weekendActivities) {
-      alert('Please select how you spend your weekends');
+    
+    const weekendValidation = validateRequired(weekendActivities, 'weekend activities');
+    if (!weekendValidation.isValid) {
+      showValidationError('Please tell us how you spend your weekends. We\'d love to know what brings you joy!');
       return;
     }
+
     if (coreValues.length !== 3) {
-      alert('Please select exactly 3 values');
+      const message = coreValues.length < 3 
+        ? `Please select 3 core values. You've selected ${coreValues.length} so far.`
+        : `Please select exactly 3 core values. You've selected ${coreValues.length}.`;
+      showValidationError(message);
       return;
     }
-    if (!conflictHandling) {
-      alert('Please select how you handle conflict');
+
+    const conflictValidation = validateRequired(conflictHandling, 'conflict handling style');
+    if (!conflictValidation.isValid) {
+      showValidationError('Please tell us how you handle conflict. This helps us understand your communication style!');
       return;
     }
+
     handleSubmit({ weekendActivities, coreValues, conflictHandling }, e);
   };
 
@@ -111,10 +122,8 @@ export default function BackgroundSeriesSix() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (80%) */}
-        <div className="w-full h-1.5 bg-[#E7D3D1] rounded-full mb-10">
-          <div className="h-full w-[80%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">

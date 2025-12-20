@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
 
 export default function EmotionalSeriesFour() {
   const router = useRouter();
@@ -93,10 +94,7 @@ export default function EmotionalSeriesFour() {
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full h-1.5 bg-[#E7D3D1] rounded-full mb-10">
-          {/* Estimated 60% progress */}
-          <div className="h-full w-[60%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">

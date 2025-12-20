@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { FaArrowLeft } from "react-icons/fa6";
-import logo from "@/assets/logo2.png";
 import john from "@/assets/john.png";
 import eva from "@/assets/eva.png";
+import UserHeader from "./UserHeader";
 
 export default function AcceptRejectMatch() {
   const router = useRouter();
@@ -14,32 +13,7 @@ export default function AcceptRejectMatch() {
     <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col">
 
       {/* TOP BAR */}
-      <div className="flex items-center justify-between px-6 py-5">
-        {/* Left */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/match-time")}
-            className="p-2 rounded-md text-[#702C3E] hover:bg-[#EDD4D3]/40 transition"
-          >
-            <FaArrowLeft className="w-5 h-5" />
-          </button>
-
-          <Image src={logo} alt="Logo" className="w-10 opacity-90" />
-        </div>
-
-        {/* Right */}
-        <div className="flex items-center gap-4 text-[#702C3E] text-sm">
-          <div className="flex items-center gap-1 border border-[#E5D5D5] rounded-md px-3 py-1 cursor-pointer">
-            <span>John</span>
-            <span className="text-xs">▾</span>
-          </div>
-
-          <div className="flex items-center gap-1 border border-[#E5D5D5] rounded-md px-3 py-1 cursor-pointer">
-            <span>EN</span>
-            <span className="text-xs">▾</span>
-          </div>
-        </div>
-      </div>
+      <UserHeader showBackButton={true} backUrl="/match-time" />
 
       {/* CENTER CONTENT */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { PhaseProgressBar } from './ProgressBar';
 
 export default function GreatStart() {
   const router = useRouter();
@@ -39,8 +40,8 @@ export default function GreatStart() {
 
       {/* Center Card */}
       <div className="relative z-10 mt-24 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] w-[90%] max-w-[620px] p-10 text-center">
-        {/* Small Circle Icon */}
-        <div className="w-10 h-10 rounded-full border border-[#702C3E] mx-auto mb-6" />
+        {/* Progress Bar - Shows 1/3 */}
+        <PhaseProgressBar className="mb-6" />
 
         <h1 className="text-black text-3xl sm:text-4xl md:text-5xl font-bold font-title mb-4">
           Great Start!

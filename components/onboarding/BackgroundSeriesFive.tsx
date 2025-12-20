@@ -9,6 +9,8 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
+import { showValidationError, validationMessages } from '@/lib/utils/validation';
 
 export default function BackgroundSeriesFive() {
   const router = useRouter();
@@ -40,21 +42,38 @@ export default function BackgroundSeriesFive() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (openToPartnerWithChildren === null) {
-      alert('Please answer if you are open to a partner with children');
+      showValidationError('Please let us know if you\'re open to a partner with children. This helps us find better matches for you!');
       return;
     }
+    
     if (!minAge || !maxAge) {
-      alert('Please enter both minimum and maximum age');
+      showValidationError('Please enter both minimum and maximum age for your preferred partner. This helps us understand your preferences!');
       return;
     }
+    
+    const minAgeNum = parseInt(minAge);
+    const maxAgeNum = parseInt(maxAge);
+    
+    if (isNaN(minAgeNum) || minAgeNum < 22) {
+      showValidationError('The minimum age for a partner must be at least 22 years old. We focus on serious relationships and require users to be 22 or older.');
+      return;
+    }
+    
+    if (isNaN(maxAgeNum) || maxAgeNum < minAgeNum) {
+      showValidationError('The maximum age must be greater than or equal to the minimum age. Please adjust your age range.');
+      return;
+    }
+    
     if (!idealMarriageTimeline) {
-      alert('Please select your ideal timeline for marriage');
+      showValidationError('Please select your ideal timeline for marriage. This helps us understand your relationship goals!');
       return;
     }
+    
     handleSubmit({
       openToPartnerWithChildren,
-      preferredAgeRange: { min: parseInt(minAge), max: parseInt(maxAge) },
+      preferredAgeRange: { min: minAgeNum, max: maxAgeNum },
       idealMarriageTimeline,
     }, e);
   };
@@ -90,10 +109,8 @@ export default function BackgroundSeriesFive() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (70%) */}
-        <div className="w-full h-1.5 bg-[#E7D3D1] rounded-full mb-10">
-          <div className="h-full w-[70%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">
@@ -191,26 +208,32 @@ export default function BackgroundSeriesFive() {
             <div className="flex flex-col gap-4">
 
               {/* MIN AGE */}
-              <div className="flex items-center gap-3 w-full md:w-3/4">
-                <div
-                  className="
-                    bg-[#F6E7EA] border border-[#E4D6D6] 
-                    rounded-md py-3 px-4 w-24 text-sm text-[#491A26]
-                  "
-                >
-                  Min
-                </div>
+              <div className="flex flex-col gap-2 w-full md:w-3/4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="
+                      bg-[#F6E7EA] border border-[#E4D6D6] 
+                      rounded-md py-3 px-4 w-24 text-sm text-[#491A26]
+                    "
+                  >
+                    Min
+                  </div>
 
-                <input
-                  type="number"
-                  placeholder="e.g., 30"
-                  value={minAge}
-                  onChange={(e) => setMinAge(e.target.value)}
-                  className="
-                    flex-1 bg-[#F6E7EA] border border-[#E4D6D6]
-                    rounded-md py-3 px-4 text-sm text-black outline-none
-                  "
-                />
+                  <input
+                    type="number"
+                    placeholder="e.g., 30"
+                    value={minAge}
+                    onChange={(e) => setMinAge(e.target.value)}
+                    min="22"
+                    className="
+                      flex-1 bg-[#F6E7EA] border border-[#E4D6D6]
+                      rounded-md py-3 px-4 text-sm text-black outline-none
+                    "
+                  />
+                </div>
+                <p className="text-xs text-[#6B5B5B] ml-28">
+                  Minimum age is 22 years old
+                </p>
               </div>
 
               {/* MAX AGE */}
@@ -229,6 +252,7 @@ export default function BackgroundSeriesFive() {
                   placeholder="e.g., 50"
                   value={maxAge}
                   onChange={(e) => setMaxAge(e.target.value)}
+                  min={minAge || "22"}
                   className="
                     flex-1 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 text-sm text-black outline-none

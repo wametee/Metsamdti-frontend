@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
 
 export default function BackgroundSeriesSeven() {
   const router = useRouter();
@@ -87,10 +88,8 @@ export default function BackgroundSeriesSeven() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (90%) */}
-        <div className="w-full h-1.5 bg-[#E7D3D1] rounded-full mb-10">
-          <div className="h-full w-[90%] bg-[#702C3E] rounded-full"></div>
-        </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
          <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">

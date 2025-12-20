@@ -9,11 +9,23 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import { StepProgressBar } from './ProgressBar';
+import { validateRequired, showValidationError } from '@/lib/utils/validation';
+import { useOnboardingStepValidation } from '@/hooks/useOnboardingStepValidation';
 
 export default function BackgroundSeriesThree() {
   const router = useRouter();
+  const { isValidating, isValid } = useOnboardingStepValidation();
   const [education, setEducation] = useState("");
   const [occupation, setOccupation] = useState("");
+
+  // Use submit hook - MUST be called before any conditional returns
+  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
+    { education: string; occupation: string }
+  >(
+    (data) => onboardingService.submitBackgroundSeriesThree(data, ''),
+    '/onboarding/background-series-four'
+  );
 
   // Load saved data
   useEffect(() => {
@@ -24,24 +36,37 @@ export default function BackgroundSeriesThree() {
     }
   }, []);
 
-  // Use submit hook
-  const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
-    { education: string; occupation: string }
-  >(
-    (data) => onboardingService.submitBackgroundSeriesThree(data, ''),
-    '/onboarding/background-series-four'
-  );
+  // Show loading state while validating
+  if (isValidating) {
+    return (
+      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
+        <div className="w-full max-w-3xl md:max-w-4xl lg:max-w-1xl bg-[#EDD4D3] border-2 border-white rounded-2xl py-10 px-6 md:px-20 shadow-md">
+          <p className="text-center text-[#702C3E]">Loading...</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Don't render if validation failed (redirect will happen)
+  if (!isValid) {
+    return null;
+  }
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!education) {
-      alert('Please select your education level');
+    
+    const educationValidation = validateRequired(education, 'education level');
+    if (!educationValidation.isValid) {
+      showValidationError('Please select your education level. This helps us understand your background!');
       return;
     }
-    if (!occupation.trim()) {
-      alert('Please tell us your occupation');
+
+    const occupationValidation = validateRequired(occupation, 'occupation');
+    if (!occupationValidation.isValid) {
+      showValidationError('Please tell us about your occupation. We\'d love to know what you do!');
       return;
     }
+
     handleSubmit({ education, occupation }, e);
   };
 
@@ -72,11 +97,8 @@ export default function BackgroundSeriesThree() {
           <Image src={logo} alt="Logo" className="w-14 opacity-90" />
         </div>
 
-        {/* Progress Bar (50%) */}
-       <div className="w-full md:w-11/12 lg:w-10/12 h-2 md:h-3 bg-[#F6E7EA] rounded-full mb-10 md:mb-12 px-2 ml-0">
-                 {/* 50% progress for step 2 - responsive fill widths */}
-                 <div className="h-full w-[50%] md:w-[30%] lg:w-[24%] bg-[#702C3E] rounded-full"></div>
-               </div>
+        {/* Progress Bar */}
+        <StepProgressBar className="mb-10" />
 
         {/* Title */}
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-3">

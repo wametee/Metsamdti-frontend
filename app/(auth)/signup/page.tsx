@@ -11,6 +11,9 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSession } from '@/hooks/useOnboardingSession';
 import { useMutation } from '@tanstack/react-query';
+import { toast } from "react-toastify";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { validateEmail, validatePassword, showValidationError, validationMessages } from '@/lib/utils/validation';
 
 export default function Signup() {
   const router = useRouter();
@@ -29,17 +32,24 @@ export default function Signup() {
       setIsSubmitting(true);
       setError(null);
 
-      // Validation
-      if (!email || !password) {
-        throw new Error('Email and password are required');
+      // Validate email
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        showValidationError(emailValidation.message!);
+        throw new Error(emailValidation.message!);
       }
 
+      // Validate password
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        showValidationError(passwordValidation.message!);
+        throw new Error(passwordValidation.message!);
+      }
+
+      // Validate password match
       if (password !== confirmPassword) {
-        throw new Error('Passwords do not match');
-      }
-
-      if (password.length < 8) {
-        throw new Error('Password must be at least 8 characters long');
+        showValidationError(validationMessages.password.match);
+        throw new Error(validationMessages.password.match);
       }
 
       // Submit complete application with all onboarding data
@@ -55,12 +65,21 @@ export default function Signup() {
       return result;
     },
     onSuccess: () => {
+      // Show success toast
+      toast.success("Account created successfully! Redirecting to login...", {
+        position: "top-right",
+        autoClose: 2000,
+      });
       // Redirect to login page after successful signup
-      router.push('/login');
+      setTimeout(() => {
+        router.push('/login');
+      }, 500);
     },
     onError: (error: any) => {
-      setError(error.message || 'An error occurred');
+      const errorMessage = error.message || 'An error occurred';
+      setError(errorMessage);
       setIsSubmitting(false);
+      // Error toast is already shown by the error interceptor
     },
   });
 
@@ -212,17 +231,7 @@ export default function Signup() {
           </div>
 
           {/* Google Button */}
-          <button
-            className="
-              w-full bg-white
-              border border-[#E4D6D6]
-              py-3 rounded-md
-              text-sm text-[#491A26]
-              hover:bg-[#FAF3F3] transition
-            "
-          >
-            Continue with Google
-          </button>
+          <GoogleSignInButton />
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">
