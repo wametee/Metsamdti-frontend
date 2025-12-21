@@ -81,6 +81,25 @@ const FIELD_OPTIONS: Record<string, string[]> = {
   conflict_handling: ['Talk it out', 'Take space', 'Seek mediation'],
   love_language: ['Words', 'Acts', 'Touch', 'Quality time', 'Gifts'], // Matches BackgroundSeriesSeven
   weekend_activities: ['Quiet at home', 'Socializing', 'Outdoors', 'Hobbies or studying'], // Matches BackgroundSeriesSix
+  // Emotional Series One
+  emotional_balance: ['I prefer to take space and process quietly.', 'I stabilize after I talk to someone I trust.'],
+  conflict_emotional_response: ['I try to sort it out by myself.', 'I like clarity, and will address conflict directly.'],
+  decision_making_guide: ['Logic + certainty.', 'Feelings and intuition.'],
+  // Emotional Series Two
+  preferred_emotional_energy: ['A calm, steady partner', 'An expressive, emotionally present partner'],
+  feels_loved: ['When my partner does something thoughtful just for me', 'When my partner openly speaks, shows how they feel'],
+  deep_connection: ['Meaningful talks', 'Shared moments'],
+  // Emotional Series Three
+  confidence_moments: ['After completing tasks or goals', 'When receiving value from people or situations'],
+  show_love: ['I show love through actions and doing things', 'I express love with words and affirmations'],
+  // Emotional Series Four
+  disagreement_response: ['I try to understand their point of view', 'I feel challenged and need time to reflect'],
+  loved_one_upset_response: ['I give them space to breathe', 'I stay close and offer comfort'],
+  refill_emotional_energy: ['Quiet time alone', 'Being around the people I love'],
+  // Emotional Series Five
+  communication_style: ['Direct and clear', 'Gentle and layered'],
+  life_approach: ['Structured and predictable', 'Flexible and spontaneous'],
+  valued_relationship: ['Stable and harmonious', 'Deep and emotionally rich'],
 };
 
 export default function ProfileView() {
@@ -157,6 +176,21 @@ export default function ProfileView() {
             ideal_marriage_timeline: normalizeFieldValue(completeProfile.ideal_marriage_timeline, 'ideal_marriage_timeline'),
             conflict_handling: normalizeFieldValue(completeProfile.conflict_handling, 'conflict_handling'),
             faith_importance: normalizeFieldValue(completeProfile.faith_importance, 'faith_importance'),
+            // Normalize emotional series fields
+            emotional_balance: normalizeFieldValue(completeProfile.emotional_balance, 'emotional_balance'),
+            conflict_emotional_response: normalizeFieldValue(completeProfile.conflict_emotional_response, 'conflict_emotional_response'),
+            decision_making_guide: normalizeFieldValue(completeProfile.decision_making_guide, 'decision_making_guide'),
+            preferred_emotional_energy: normalizeFieldValue(completeProfile.preferred_emotional_energy, 'preferred_emotional_energy'),
+            feels_loved: normalizeFieldValue(completeProfile.feels_loved, 'feels_loved'),
+            deep_connection: normalizeFieldValue(completeProfile.deep_connection, 'deep_connection'),
+            confidence_moments: normalizeFieldValue(completeProfile.confidence_moments, 'confidence_moments'),
+            show_love: normalizeFieldValue(completeProfile.show_love, 'show_love'),
+            disagreement_response: normalizeFieldValue(completeProfile.disagreement_response, 'disagreement_response'),
+            loved_one_upset_response: normalizeFieldValue(completeProfile.loved_one_upset_response, 'loved_one_upset_response'),
+            refill_emotional_energy: normalizeFieldValue(completeProfile.refill_emotional_energy, 'refill_emotional_energy'),
+            communication_style: normalizeFieldValue(completeProfile.communication_style, 'communication_style'),
+            life_approach: normalizeFieldValue(completeProfile.life_approach, 'life_approach'),
+            valued_relationship: normalizeFieldValue(completeProfile.valued_relationship, 'valued_relationship'),
           };
           
           setProfileData(normalizedProfile);
@@ -541,6 +575,7 @@ export default function ProfileView() {
   const fieldOptions = FIELD_OPTIONS;
 
   // Helper component to render editable field - memoized to prevent focus loss
+  // Custom comparison function to prevent unnecessary re-renders
   const EditableField = memo(({ 
     label, 
     field, 
@@ -613,7 +648,15 @@ export default function ProfileView() {
             <textarea
               key={`textarea-${field}`}
               value={value ?? ''}
-              onChange={(e) => onFieldChange(field, e.target.value)}
+              onChange={(e) => {
+                // Stop propagation to prevent focus loss
+                e.stopPropagation();
+                onFieldChange(field, e.target.value);
+              }}
+              onKeyDown={(e) => {
+                // Stop propagation to prevent focus loss
+                e.stopPropagation();
+              }}
               className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E]"
               rows={3}
               autoComplete="off"
@@ -682,10 +725,16 @@ export default function ProfileView() {
             type={type}
             value={value ?? ''}
             onChange={(e) => {
+              // Stop propagation to prevent focus loss
+              e.stopPropagation();
               const newValue = type === 'number' 
                 ? (e.target.value === '' ? null : parseInt(e.target.value) || null)
                 : e.target.value;
               onFieldChange(field, newValue);
+            }}
+            onKeyDown={(e) => {
+              // Stop propagation to prevent focus loss
+              e.stopPropagation();
             }}
             className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E]"
             autoComplete="off"
@@ -1226,24 +1275,27 @@ export default function ProfileView() {
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Emotional Balance & Decision Making</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <EditableField
-                        label="Emotional Balance"
+                        label="When emotions feel heavy, how do you naturally find your balance?"
                         field="emotional_balance"
                         value={isEditing ? editData?.emotional_balance : profileData?.emotional_balance}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Conflict Emotional Response"
+                        label="When conflict arises, how does your emotional instinct show up?"
                         field="conflict_emotional_response"
                         value={isEditing ? editData?.conflict_emotional_response : profileData?.conflict_emotional_response}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Decision Making Guide"
+                        label="When you make important decisions, what guides you first?"
                         field="decision_making_guide"
                         value={isEditing ? editData?.decision_making_guide : profileData?.decision_making_guide}
-                        type="textarea"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                     </div>
@@ -1256,24 +1308,27 @@ export default function ProfileView() {
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Emotional Energy & Connection</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <EditableField
-                        label="Preferred Emotional Energy"
+                        label="What kind of emotional energy do you feel most at peace with?"
                         field="preferred_emotional_energy"
                         value={isEditing ? editData?.preferred_emotional_energy : profileData?.preferred_emotional_energy}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Feels Loved When"
+                        label="In a relationship, what makes you feel genuinely loved?"
                         field="feels_loved"
                         value={isEditing ? editData?.feels_loved : profileData?.feels_loved}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Deep Connection"
+                        label="What helps you connect deeply with someone?"
                         field="deep_connection"
                         value={isEditing ? editData?.deep_connection : profileData?.deep_connection}
-                        type="textarea"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                     </div>
@@ -1286,17 +1341,19 @@ export default function ProfileView() {
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Confidence & Love Expression</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <EditableField
-                        label="Confidence Moments"
+                        label="When do you feel most confident in yourself?"
                         field="confidence_moments"
                         value={isEditing ? editData?.confidence_moments : profileData?.confidence_moments}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Shows Love By"
+                        label="How do you naturally show love?"
                         field="show_love"
                         value={isEditing ? editData?.show_love : profileData?.show_love}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                     </div>
@@ -1309,24 +1366,27 @@ export default function ProfileView() {
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Conflict & Emotional Recovery</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <EditableField
-                        label="Disagreement Response"
+                        label="When someone disagrees with you, what happens inside you?"
                         field="disagreement_response"
                         value={isEditing ? editData?.disagreement_response : profileData?.disagreement_response}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="When Loved One is Upset"
+                        label="When someone you love is upset, how do you respond?"
                         field="loved_one_upset_response"
                         value={isEditing ? editData?.loved_one_upset_response : profileData?.loved_one_upset_response}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Refills Emotional Energy By"
+                        label="What helps you refill your emotional energy?"
                         field="refill_emotional_energy"
                         value={isEditing ? editData?.refill_emotional_energy : profileData?.refill_emotional_energy}
-                        type="textarea"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                     </div>
@@ -1339,24 +1399,27 @@ export default function ProfileView() {
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Communication & Relationship Values</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <EditableField
-                        label="Communication Style"
+                        label="What communication style feels safest to your heart?"
                         field="communication_style"
                         value={isEditing ? editData?.communication_style : profileData?.communication_style}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Life Approach"
+                        label="Which approach to life feels more natural to you?"
                         field="life_approach"
                         value={isEditing ? editData?.life_approach : profileData?.life_approach}
-                        type="text"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                       <EditableField
-                        label="Most Valued in Relationship"
+                        label="What kind of relationship do you value most?"
                         field="valued_relationship"
                         value={isEditing ? editData?.valued_relationship : profileData?.valued_relationship}
-                        type="textarea"
+                        type="select"
+                        useRadioButtons={true}
                         onFieldChange={handleFieldChange}
                       />
                     </div>
