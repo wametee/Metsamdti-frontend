@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { RiArrowDropDownLine } from "react-icons/ri";
@@ -10,6 +10,7 @@ import authService from "@/services/auth/authService";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import httpClient from "@/lib/httpClient";
 import { getImageUrl, isLocalImage, extractStorageInfo, extractStorageKeyFromUrl } from "@/lib/utils/imageUrl";
+import { toast } from "react-toastify";
 
 interface ProfileData {
   display_name?: string;
@@ -254,16 +255,20 @@ export default function ProfileView() {
     setEditPhotos(newPhotos);
   };
 
-  // Handle photo removal
-  const handlePhotoRemove = (index: number) => {
-    const newPreviews = [...photoPreviews];
-    newPreviews.splice(index, 1);
-    setPhotoPreviews(newPreviews);
+  // Handle photo removal - maintain slot positions to fix index alignment
+  // The key issue: we need to remove the photo at the exact slotIndex without shifting
+  // Solution: Use filter with index comparison to remove only the specific slot
+  const handlePhotoRemove = useCallback((slotIndex: number) => {
+    setPhotoPreviews((prev) => {
+      // Remove only the element at slotIndex, maintaining order of others
+      return prev.filter((_, i) => i !== slotIndex);
+    });
 
-    const newPhotos = [...editPhotos];
-    newPhotos.splice(index, 1);
-    setEditPhotos(newPhotos);
-  };
+    setEditPhotos((prev) => {
+      // Remove only the element at slotIndex, maintaining order of others
+      return prev.filter((_, i) => i !== slotIndex);
+    });
+  }, []);
 
   // Handle form field changes - use functional update to prevent focus loss
   const handleFieldChange = useCallback((field: string, value: any) => {
@@ -493,7 +498,13 @@ export default function ProfileView() {
         } else {
           setPhotoPreviews([]);
         }
-        alert('Profile updated successfully!');
+        toast.success('Profile updated successfully!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+        });
       } else {
         console.error('Update failed:', result);
         const errorMsg = result.message || 'Failed to update profile. Please check the console for details.';
@@ -529,8 +540,8 @@ export default function ProfileView() {
   // Use the field options constant
   const fieldOptions = FIELD_OPTIONS;
 
-  // Helper component to render editable field
-  const EditableField = ({ 
+  // Helper component to render editable field - memoized to prevent focus loss
+  const EditableField = memo(({ 
     label, 
     field, 
     value, 
@@ -538,6 +549,7 @@ export default function ProfileView() {
     options,
     isArray = false,
     useRadioButtons = false,
+    onFieldChange,
   }: {
     label: string;
     field: string;
@@ -546,6 +558,7 @@ export default function ProfileView() {
     options?: string[];
     isArray?: boolean;
     useRadioButtons?: boolean;
+    onFieldChange: (field: string, value: any) => void;
   }) => {
     if (isEditing) {
       // Use radio buttons if options are available and useRadioButtons is true
@@ -566,7 +579,7 @@ export default function ProfileView() {
                 return (
                   <label
                     key={opt}
-                    onClick={() => handleFieldChange(field, opt)}
+                    onClick={() => onFieldChange(field, opt)}
                     className={`
                       w-full md:w-3/4 border rounded-md py-2 px-3
                       flex items-center gap-3 cursor-pointer
@@ -580,7 +593,7 @@ export default function ProfileView() {
                       type="radio"
                       name={field}
                       checked={isChecked}
-                      onChange={() => handleFieldChange(field, opt)}
+                      onChange={() => onFieldChange(field, opt)}
                       onClick={(e) => e.stopPropagation()}
                       className="w-4 h-4 accent-[#702C3E]"
                     />
@@ -600,7 +613,7 @@ export default function ProfileView() {
             <textarea
               key={`textarea-${field}`}
               value={value ?? ''}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
+              onChange={(e) => onFieldChange(field, e.target.value)}
               className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E]"
               rows={3}
               autoComplete="off"
@@ -618,7 +631,7 @@ export default function ProfileView() {
             <select
               key={`select-${field}`}
               value={normalizedValue}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
+              onChange={(e) => onFieldChange(field, e.target.value)}
               className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E] bg-white"
             >
               <option value="">Select...</option>
@@ -639,7 +652,7 @@ export default function ProfileView() {
               {['Yes', 'No'].map((opt) => (
                 <label
                   key={opt}
-                  onClick={() => handleFieldChange(field, opt === 'Yes')}
+                  onClick={() => onFieldChange(field, opt === 'Yes')}
                   className="
                     w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-2 px-3
@@ -651,7 +664,7 @@ export default function ProfileView() {
                     type="radio"
                     name={field}
                     checked={(value === true && opt === 'Yes') || (value === false && opt === 'No')}
-                    onChange={() => handleFieldChange(field, opt === 'Yes')}
+                    onChange={() => onFieldChange(field, opt === 'Yes')}
                     className="w-4 h-4 accent-[#702C3E]"
                   />
                   <span className="text-sm text-[#491A26] ml-3">{opt}</span>
@@ -672,7 +685,7 @@ export default function ProfileView() {
               const newValue = type === 'number' 
                 ? (e.target.value === '' ? null : parseInt(e.target.value) || null)
                 : e.target.value;
-              handleFieldChange(field, newValue);
+              onFieldChange(field, newValue);
             }}
             className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E]"
             autoComplete="off"
@@ -693,7 +706,7 @@ export default function ProfileView() {
         </span>
       </div>
     );
-  };
+  });
 
   // Get display name or fallback
   const displayName = profileData?.display_name || "User";
@@ -770,30 +783,30 @@ export default function ProfileView() {
         </div>
 
         {/* Title and Edit Button */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-black">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black break-words">
             About {displayName}
           </h2>
           {!isEditing && (
             <button
               onClick={handleEdit}
-              className="px-4 py-2 bg-[#702C3E] text-white rounded-md hover:bg-[#8B3A4F] transition"
+              className="px-4 py-2 bg-[#702C3E] text-white rounded-md hover:bg-[#8B3A4F] transition text-sm sm:text-base whitespace-nowrap w-full sm:w-auto"
             >
               Edit Profile
             </button>
           )}
           {isEditing && (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 border-2 border-[#702C3E] text-[#702C3E] rounded-md hover:bg-[#702C3E]/10 transition"
+                className="px-4 py-2 border-2 border-[#702C3E] text-[#702C3E] rounded-md hover:bg-[#702C3E]/10 transition disabled:opacity-50 text-sm sm:text-base whitespace-nowrap"
                 disabled={saving}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-[#702C3E] text-white rounded-md hover:bg-[#8B3A4F] transition disabled:opacity-50"
+                className="px-4 py-2 bg-[#702C3E] text-white rounded-md hover:bg-[#8B3A4F] transition disabled:opacity-50 text-sm sm:text-base whitespace-nowrap"
                 disabled={saving}
               >
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -807,37 +820,52 @@ export default function ProfileView() {
           <h3 className="text-xl font-semibold text-[#702C3E] mb-4">Photos</h3>
           {isEditing ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 max-w-2xl mx-auto px-2 md:px-0">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-dashed border-[#E4D6D6] bg-white/50 hover:border-[#702C3E] transition-colors">
-                  {photoPreviews[index] ? (
-                    <>
-                      <img
-                        src={photoPreviews[index]}
-                        alt={`Photo ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() => handlePhotoRemove(index)}
-                        className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full w-7 h-7 md:w-6 md:h-6 flex items-center justify-center text-base md:text-xs hover:bg-red-600 transition-colors shadow-md"
-                        aria-label="Remove photo"
-                      >
-                        ×
-                      </button>
-                    </>
-                  ) : (
-                    <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-[#E4D6D6]/30 active:bg-[#E4D6D6]/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoChange(e, index)}
-                        ref={index === 0 ? fileInputRef : undefined}
-                      />
-                      <span className="text-[#702C3E] text-3xl md:text-2xl font-light">+</span>
-                    </label>
-                  )}
-                </div>
-              ))}
+              {Array.from({ length: 5 }).map((_, slotIndex) => {
+                // Get the photo at this slot position
+                const photoUrl = photoPreviews[slotIndex];
+                const photoFile = editPhotos[slotIndex];
+                
+                return (
+                  <div 
+                    key={`photo-slot-${slotIndex}-${photoUrl ? 'filled' : 'empty'}`} 
+                    className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-dashed border-[#E4D6D6] bg-white/50 hover:border-[#702C3E] transition-colors"
+                  >
+                    {photoUrl ? (
+                      <>
+                        <img
+                          src={photoUrl}
+                          alt={`Photo ${slotIndex + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Pass the slotIndex directly - this ensures we remove the correct photo
+                            handlePhotoRemove(slotIndex);
+                          }}
+                          className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full w-7 h-7 md:w-6 md:h-6 flex items-center justify-center text-base md:text-xs hover:bg-red-600 transition-colors shadow-md z-10"
+                          aria-label={`Remove photo ${slotIndex + 1}`}
+                          type="button"
+                        >
+                          ×
+                        </button>
+                      </>
+                    ) : (
+                      <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-[#E4D6D6]/30 active:bg-[#E4D6D6]/50 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handlePhotoChange(e, slotIndex)}
+                          ref={slotIndex === 0 ? fileInputRef : undefined}
+                        />
+                        <span className="text-[#702C3E] text-3xl md:text-2xl font-light">+</span>
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             photoUrls.length > 0 && (
@@ -894,18 +922,21 @@ export default function ProfileView() {
                 field="full_name"
                 value={isEditing ? editData?.full_name : profileData?.full_name}
                 type="text"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Age"
                 field="age"
                 value={isEditing ? editData?.age : profileData?.age}
                 type="number"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Birthday"
                 field="birthday"
                 value={isEditing ? editData?.birthday : profileData?.birthday}
                 type="date"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Gender"
@@ -914,18 +945,21 @@ export default function ProfileView() {
                 type="select"
                 options={['Male', 'Female']}
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Current Location"
                 field="current_location"
                 value={isEditing ? editData?.current_location : profileData?.current_location}
                 type="text"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Birth Location"
                 field="birth_location"
                 value={isEditing ? editData?.birth_location : profileData?.birth_location}
                 type="text"
+                onFieldChange={handleFieldChange}
               />
               {isEditing ? (
                 <div className="flex flex-col gap-1">
@@ -959,12 +993,14 @@ export default function ProfileView() {
                 value={isEditing ? editData?.education : profileData?.education}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Occupation"
                 field="occupation"
                 value={isEditing ? editData?.occupation : profileData?.occupation}
                 type="text"
+                onFieldChange={handleFieldChange}
               />
             </div>
           </div>
@@ -978,18 +1014,21 @@ export default function ProfileView() {
                 field="previously_married"
                 value={isEditing ? editData?.previously_married : profileData?.previously_married}
                 type="boolean"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Has Children"
                 field="has_children"
                 value={isEditing ? editData?.has_children : profileData?.has_children}
                 type="boolean"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Open to Partner with Children"
                 field="open_to_partner_with_children"
                 value={isEditing ? editData?.open_to_partner_with_children : profileData?.open_to_partner_with_children}
                 type="boolean"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Living Situation"
@@ -997,6 +1036,7 @@ export default function ProfileView() {
                 value={isEditing ? editData?.living_situation : profileData?.living_situation}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
             </div>
           </div>
@@ -1048,12 +1088,14 @@ export default function ProfileView() {
                 value={isEditing ? editData?.ideal_marriage_timeline : profileData?.ideal_marriage_timeline}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Cultural Preference"
                 field="prefer_own_background"
                 value={isEditing ? editData?.prefer_own_background : profileData?.prefer_own_background}
                 type="boolean"
+                onFieldChange={handleFieldChange}
               />
             </div>
           </div>
@@ -1068,6 +1110,7 @@ export default function ProfileView() {
                 value={isEditing ? editData?.weekend_activities : profileData?.weekend_activities}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
               {isEditing ? (
                 <div className="flex flex-col gap-1">
@@ -1094,6 +1137,7 @@ export default function ProfileView() {
                 value={isEditing ? editData?.conflict_handling : profileData?.conflict_handling}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Love Language"
@@ -1101,6 +1145,7 @@ export default function ProfileView() {
                 value={isEditing ? editData?.love_language : profileData?.love_language}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
             </div>
           </div>
@@ -1115,6 +1160,7 @@ export default function ProfileView() {
                 value={isEditing ? editData?.faith_importance : profileData?.faith_importance}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Gender Roles in Marriage"
@@ -1122,6 +1168,7 @@ export default function ProfileView() {
                 value={isEditing ? editData?.gender_roles_in_marriage : profileData?.gender_roles_in_marriage}
                 type="select"
                 useRadioButtons={true}
+                onFieldChange={handleFieldChange}
               />
             </div>
           </div>
@@ -1135,18 +1182,21 @@ export default function ProfileView() {
                 field="one_thing_to_understand"
                 value={isEditing ? editData?.one_thing_to_understand : profileData?.one_thing_to_understand}
                 type="textarea"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Future Family Vision"
                 field="future_family_vision"
                 value={isEditing ? editData?.future_family_vision : profileData?.future_family_vision}
                 type="textarea"
+                onFieldChange={handleFieldChange}
               />
               <EditableField
                 label="Biggest Deal-Breaker"
                 field="biggest_deal_breaker"
                 value={isEditing ? editData?.biggest_deal_breaker : profileData?.biggest_deal_breaker}
                 type="textarea"
+                onFieldChange={handleFieldChange}
               />
             </div>
           </div>
@@ -1180,18 +1230,21 @@ export default function ProfileView() {
                         field="emotional_balance"
                         value={isEditing ? editData?.emotional_balance : profileData?.emotional_balance}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Conflict Emotional Response"
                         field="conflict_emotional_response"
                         value={isEditing ? editData?.conflict_emotional_response : profileData?.conflict_emotional_response}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Decision Making Guide"
                         field="decision_making_guide"
                         value={isEditing ? editData?.decision_making_guide : profileData?.decision_making_guide}
                         type="textarea"
+                        onFieldChange={handleFieldChange}
                       />
                     </div>
                   </div>
@@ -1207,18 +1260,21 @@ export default function ProfileView() {
                         field="preferred_emotional_energy"
                         value={isEditing ? editData?.preferred_emotional_energy : profileData?.preferred_emotional_energy}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Feels Loved When"
                         field="feels_loved"
                         value={isEditing ? editData?.feels_loved : profileData?.feels_loved}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Deep Connection"
                         field="deep_connection"
                         value={isEditing ? editData?.deep_connection : profileData?.deep_connection}
                         type="textarea"
+                        onFieldChange={handleFieldChange}
                       />
                     </div>
                   </div>
@@ -1234,12 +1290,14 @@ export default function ProfileView() {
                         field="confidence_moments"
                         value={isEditing ? editData?.confidence_moments : profileData?.confidence_moments}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Shows Love By"
                         field="show_love"
                         value={isEditing ? editData?.show_love : profileData?.show_love}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                     </div>
                   </div>
@@ -1255,18 +1313,21 @@ export default function ProfileView() {
                         field="disagreement_response"
                         value={isEditing ? editData?.disagreement_response : profileData?.disagreement_response}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="When Loved One is Upset"
                         field="loved_one_upset_response"
                         value={isEditing ? editData?.loved_one_upset_response : profileData?.loved_one_upset_response}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Refills Emotional Energy By"
                         field="refill_emotional_energy"
                         value={isEditing ? editData?.refill_emotional_energy : profileData?.refill_emotional_energy}
                         type="textarea"
+                        onFieldChange={handleFieldChange}
                       />
                     </div>
                   </div>
@@ -1282,18 +1343,21 @@ export default function ProfileView() {
                         field="communication_style"
                         value={isEditing ? editData?.communication_style : profileData?.communication_style}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Life Approach"
                         field="life_approach"
                         value={isEditing ? editData?.life_approach : profileData?.life_approach}
                         type="text"
+                        onFieldChange={handleFieldChange}
                       />
                       <EditableField
                         label="Most Valued in Relationship"
                         field="valued_relationship"
                         value={isEditing ? editData?.valued_relationship : profileData?.valued_relationship}
                         type="textarea"
+                        onFieldChange={handleFieldChange}
                       />
                     </div>
                   </div>
