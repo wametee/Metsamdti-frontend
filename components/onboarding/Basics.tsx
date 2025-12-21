@@ -288,10 +288,10 @@ export default function Basics() {
               placeholder="Enter Full Name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              className="w-full md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
               required
             />
-            <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
+            <p className="text-xs text-[#6B5B5B] mt-1 w-full md:w-2/3">
               Your display name will be automatically generated from your full name
             </p>
           </div>
@@ -305,10 +305,10 @@ export default function Basics() {
               value={username}
               readOnly
               disabled
-              className="w-3/4 md:w-2/3 bg-[#E4D6D6] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-[#6B5B5B] outline-none cursor-not-allowed"
+              className="w-full md:w-2/3 bg-[#E4D6D6] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-[#6B5B5B] outline-none cursor-not-allowed"
               required
             />
-            <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
+            <p className="text-xs text-[#6B5B5B] mt-1 w-full md:w-2/3">
               This is automatically generated from your full name (letters only, no numbers)
             </p>
           </div>
@@ -337,32 +337,32 @@ export default function Basics() {
               }}
               min={22}
               max={100}
-              className={`w-3/4 md:w-2/3 bg-[#F6E7EA] border ${
+              className={`w-full md:w-2/3 bg-[#F6E7EA] border ${
                 ageError ? "border-red-400" : "border-[#E4D6D6]"
               } rounded-md py-3 px-4 text-sm text-black outline-none`}
               required
             />
             {ageError && (
-              <p className="text-sm text-red-600 mt-2 w-3/4 md:w-2/3">{ageError}</p>
+              <p className="text-sm text-red-600 mt-2 w-full md:w-2/3">{ageError}</p>
             )}
             {!ageError && age === "" && (
-              <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
+              <p className="text-xs text-[#6B5B5B] mt-1 w-full md:w-2/3">
                 You must be at least 22 years old to use Metsamdti.
               </p>
             )}
           </div>
 
           {/* Image Upload Section */}
-          <div className="flex flex-col items-center mt-6">
-            <p className="self-start text-sm text-[#491A26] mb-2 font-medium">Upload your photos</p>
+          <div className="flex flex-col items-center mt-6 w-full">
+            <p className="self-start text-sm text-[#491A26] mb-4 font-medium">Upload your photos</p>
 
             {/* Upload Grid */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3 md:gap-4 w-full max-w-md mx-auto">
 
               {/* Main Large Image (reduced size) - shows first uploaded image */}
               <div className="col-span-3 flex justify-center">
                 <div 
-                  className="w-32 h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6] cursor-pointer hover:border-[#702C3E] transition-colors group"
+                  className="w-40 h-40 md:w-32 md:h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6] cursor-pointer hover:border-[#702C3E] transition-colors group"
                   onClick={() => handlePhotoClick(0)}
                 >
                   {photoPreviews[0] ? (
@@ -405,11 +405,11 @@ export default function Basics() {
               </div>
 
               {/* Five Small Upload Boxes */}
-              <div className="col-span-3 grid grid-cols-3 gap-4">
+              <div className="col-span-3 grid grid-cols-3 gap-3 md:gap-4">
                 {[0, 1, 2].map((index) => (
                   <div key={index} className="flex flex-col items-center relative">
                     <div 
-                      className="w-28 h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
+                      className="w-full aspect-square max-w-[120px] md:w-28 md:h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
                       onClick={() => handlePhotoClick(index)}
                     >
                       {photoPreviews[index] ? (
@@ -461,11 +461,11 @@ export default function Basics() {
                 ))}
               </div>
 
-              <div className="col-span-3 flex justify-center gap-4">
+              <div className="col-span-3 flex justify-center gap-3 md:gap-4">
                 {[3, 4].map((index) => (
                   <div key={index} className="flex flex-col items-center relative">
                     <div 
-                      className="w-28 h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
+                      className="w-32 h-32 md:w-28 md:h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
                       onClick={() => handlePhotoClick(index)}
                     >
                       {photoPreviews[index] ? (
