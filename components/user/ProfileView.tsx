@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { RiArrowDropDownLine } from "react-icons/ri";
@@ -68,6 +68,20 @@ interface ProfileData {
   }>;
 }
 
+// Field options mapping (matching onboarding question structure exactly)
+// Defined outside component to ensure it's available for normalization
+const FIELD_OPTIONS: Record<string, string[]> = {
+  gender: ['Male', 'Female'],
+  living_situation: ['Alone', 'With family', 'With roommates'],
+  education: ['Primary', 'Secondary', 'University', 'Other'], // Matches BackgroundSeriesThree
+  ideal_marriage_timeline: ['1 year', '1–2 years', 'Open-ended'],
+  faith_importance: ['Very important', 'Somewhat', 'Not important'],
+  gender_roles_in_marriage: ['Traditional', 'Equal partnership', 'Flexible', 'Not sure'], // Matches BackgroundSeriesEight
+  conflict_handling: ['Talk it out', 'Take space', 'Seek mediation'],
+  love_language: ['Words', 'Acts', 'Touch', 'Quality time', 'Gifts'], // Matches BackgroundSeriesSeven
+  weekend_activities: ['Quiet at home', 'Socializing', 'Outdoors', 'Hobbies or studying'], // Matches BackgroundSeriesSix
+};
+
 export default function ProfileView() {
   const router = useRouter();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -105,17 +119,43 @@ export default function ProfileView() {
             photos: result.profile.photos || [],
           };
           
-          // Normalize string values (trim whitespace) to ensure proper matching with options
+          // Normalize string values and map to correct option values from database
+          // This ensures database values match the exact option strings from background series
+          const normalizeFieldValue = (value: any, fieldName: string): string | null => {
+            if (!value) return null;
+            const strValue = String(value).trim();
+            if (!strValue) return null;
+            
+            // Get the correct options for this field
+            const options = FIELD_OPTIONS[fieldName] || [];
+            
+            // Try exact match first
+            if (options.includes(strValue)) {
+              return strValue;
+            }
+            
+            // Try case-insensitive match and return the correct option value
+            const matchedOption = options.find(opt => 
+              opt.toLowerCase() === strValue.toLowerCase()
+            );
+            if (matchedOption) {
+              return matchedOption; // Return the correct option value from FIELD_OPTIONS
+            }
+            
+            // If no match found, return the original value (might be from old data)
+            return strValue;
+          };
+          
           const normalizedProfile = {
             ...completeProfile,
-            education: completeProfile.education ? String(completeProfile.education).trim() : null,
-            weekend_activities: completeProfile.weekend_activities ? String(completeProfile.weekend_activities).trim() : null,
-            love_language: completeProfile.love_language ? String(completeProfile.love_language).trim() : null,
-            gender_roles_in_marriage: completeProfile.gender_roles_in_marriage ? String(completeProfile.gender_roles_in_marriage).trim() : null,
-            living_situation: completeProfile.living_situation ? String(completeProfile.living_situation).trim() : null,
-            ideal_marriage_timeline: completeProfile.ideal_marriage_timeline ? String(completeProfile.ideal_marriage_timeline).trim() : null,
-            conflict_handling: completeProfile.conflict_handling ? String(completeProfile.conflict_handling).trim() : null,
-            faith_importance: completeProfile.faith_importance ? String(completeProfile.faith_importance).trim() : null,
+            education: normalizeFieldValue(completeProfile.education, 'education'),
+            weekend_activities: normalizeFieldValue(completeProfile.weekend_activities, 'weekend_activities'),
+            love_language: normalizeFieldValue(completeProfile.love_language, 'love_language'),
+            gender_roles_in_marriage: normalizeFieldValue(completeProfile.gender_roles_in_marriage, 'gender_roles_in_marriage'),
+            living_situation: normalizeFieldValue(completeProfile.living_situation, 'living_situation'),
+            ideal_marriage_timeline: normalizeFieldValue(completeProfile.ideal_marriage_timeline, 'ideal_marriage_timeline'),
+            conflict_handling: normalizeFieldValue(completeProfile.conflict_handling, 'conflict_handling'),
+            faith_importance: normalizeFieldValue(completeProfile.faith_importance, 'faith_importance'),
           };
           
           setProfileData(normalizedProfile);
@@ -225,23 +265,27 @@ export default function ProfileView() {
     setEditPhotos(newPhotos);
   };
 
-  // Handle form field changes
-  const handleFieldChange = (field: string, value: any) => {
-    if (!editData) return;
-    setEditData({
-      ...editData,
-      [field]: value,
+  // Handle form field changes - use functional update to prevent focus loss
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    setEditData((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        [field]: value,
+      };
     });
-  };
+  }, []);
 
-  // Handle array field changes (like languages, core_values)
-  const handleArrayFieldChange = (field: string, value: string[]) => {
-    if (!editData) return;
-    setEditData({
-      ...editData,
-      [field]: value,
+  // Handle array field changes (like languages, core_values) - use functional update
+  const handleArrayFieldChange = useCallback((field: string, value: string[]) => {
+    setEditData((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        [field]: value,
+      };
     });
-  };
+  }, []);
 
   // Handle save
   const handleSave = async () => {
@@ -482,18 +526,8 @@ export default function ProfileView() {
     return value.join(", ");
   };
 
-  // Field options mapping (matching onboarding question structure)
-  const fieldOptions: Record<string, string[]> = {
-    gender: ['Male', 'Female'],
-    living_situation: ['Alone', 'With family', 'With roommates'],
-    education: ['High school', 'Some college', 'University', 'Graduate school', 'Other'],
-    ideal_marriage_timeline: ['1 year', '1–2 years', 'Open-ended'],
-    faith_importance: ['Very important', 'Somewhat', 'Not important'],
-    gender_roles_in_marriage: ['Traditional roles', 'Equal partnership', 'Flexible'],
-    conflict_handling: ['Talk it out', 'Take space', 'Seek mediation'],
-    love_language: ['Words of affirmation', 'Quality time', 'Gifts', 'Acts of service', 'Touch'],
-    weekend_activities: ['Socializing', 'Outdoors', 'Relaxing at home', 'Cultural events'],
-  };
+  // Use the field options constant
+  const fieldOptions = FIELD_OPTIONS;
 
   // Helper component to render editable field
   const EditableField = ({ 
@@ -517,7 +551,8 @@ export default function ProfileView() {
       // Use radio buttons if options are available and useRadioButtons is true
       const fieldOptionsList = options || fieldOptions[field];
       if (useRadioButtons && fieldOptionsList && fieldOptionsList.length > 0) {
-        // Normalize value for comparison (trim whitespace, handle case sensitivity)
+        // Normalize value for comparison (trim whitespace, case-insensitive matching)
+        // First try exact match, then try case-insensitive match
         const normalizedValue = value ? String(value).trim() : '';
         return (
           <div className="flex flex-col gap-2 md:col-span-2">
@@ -525,7 +560,9 @@ export default function ProfileView() {
             <div className="flex flex-col gap-2">
               {fieldOptionsList.map((opt) => {
                 const normalizedOpt = String(opt).trim();
-                const isChecked = normalizedValue === normalizedOpt;
+                // Try exact match first, then case-insensitive match
+                const isChecked = normalizedValue === normalizedOpt || 
+                                 normalizedValue.toLowerCase() === normalizedOpt.toLowerCase();
                 return (
                   <label
                     key={opt}
@@ -561,10 +598,12 @@ export default function ProfileView() {
           <div className="flex flex-col gap-1 md:col-span-2">
             <label className="text-sm text-[#6B5B5B] font-medium">{label}</label>
             <textarea
-              value={value || ''}
+              key={`textarea-${field}`}
+              value={value ?? ''}
               onChange={(e) => handleFieldChange(field, e.target.value)}
               className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E]"
               rows={3}
+              autoComplete="off"
             />
           </div>
         );
@@ -577,19 +616,17 @@ export default function ProfileView() {
           <div className="flex flex-col gap-1">
             <label className="text-sm text-[#6B5B5B] font-medium">{label}</label>
             <select
+              key={`select-${field}`}
               value={normalizedValue}
               onChange={(e) => handleFieldChange(field, e.target.value)}
               className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E] bg-white"
             >
               <option value="">Select...</option>
-              {selectOptions.map((opt) => {
-                const normalizedOpt = String(opt).trim();
-                return (
-                  <option key={opt} value={opt} selected={normalizedValue === normalizedOpt}>
-                    {opt}
-                  </option>
-                );
-              })}
+              {selectOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
             </select>
           </div>
         );
@@ -628,10 +665,17 @@ export default function ProfileView() {
         <div className="flex flex-col gap-1">
           <label className="text-sm text-[#6B5B5B] font-medium">{label}</label>
           <input
+            key={`input-${field}`}
             type={type}
-            value={value || ''}
-            onChange={(e) => handleFieldChange(field, type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
+            value={value ?? ''}
+            onChange={(e) => {
+              const newValue = type === 'number' 
+                ? (e.target.value === '' ? null : parseInt(e.target.value) || null)
+                : e.target.value;
+              handleFieldChange(field, newValue);
+            }}
             className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E]"
+            autoComplete="off"
           />
         </div>
       );
