@@ -162,6 +162,25 @@ class AuthService {
       };
     }
   }
+
+  /**
+   * Update current user's profile
+   */
+  async updateProfile(profileData: any): Promise<{ success: boolean; profile?: any; message?: string }> {
+    try {
+      const response = await httpClient.put("/auth/profile", profileData);
+      return {
+        success: true,
+        profile: response.data.profile,
+        message: response.data.message,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message || "Failed to update profile",
+      };
+    }
+  }
 }
 
 export default new AuthService();

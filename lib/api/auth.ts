@@ -41,3 +41,10 @@ export async function getCurrentUser() {
   return response.json();
 }
 
+export async function acceptTerms() {
+  const response = await apiClient("auth/accept-terms", {
+    method: "POST",
+  });
+  return response.json();
+}
+

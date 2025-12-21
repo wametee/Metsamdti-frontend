@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -18,13 +18,22 @@ export default function BackgroundSeriesSeven() {
   const [loveLanguage, setLoveLanguage] = useState("");
   const [oneThingToUnderstand, setOneThingToUnderstand] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setLoveLanguage(saved.loveLanguage || '');
-      setOneThingToUnderstand(saved.oneThingToUnderstand || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!loveLanguage && saved.loveLanguage) {
+        setLoveLanguage(saved.loveLanguage);
+      }
+      if (!oneThingToUnderstand && saved.oneThingToUnderstand) {
+        setOneThingToUnderstand(saved.oneThingToUnderstand);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

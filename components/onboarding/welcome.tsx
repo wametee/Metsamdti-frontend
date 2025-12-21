@@ -52,7 +52,7 @@ export default function Welcome() {
         {/* Begin Button */}
         <div className="mt-10">
           <Link
-            href="/onboarding/thankyou"
+            href="/onboarding/accept-terms"
             className="group inline-flex items-center gap-2 bg-[#702C3E] text-white px-6 py-3 rounded-md font-semibold shadow-md hover:bg-[#702C3E]/90 transition"
           >
             Begin
@@ -63,12 +63,13 @@ export default function Welcome() {
         {/* Terms (removed inline for mobile/tables — moved to bottom for all sizes) */}
       </div>
 
+
       {/* Terms positioned at the bottom for all screen sizes (mobile & tablets included) */}
       <div className="absolute bottom-6 w-full text-center px-4 z-20">
         <p className="text-xs text-[#2F2E2E] mx-auto max-w-2xl">
           By continuing, you agree to our{' '}
-          <Link href="/terms" className="underline">Terms of Service</Link>{' '}and{' '}
-          <Link href="/privacy" className="underline">Privacy Policy</Link>.
+          <Link href="/terms-of-service" className="underline">Terms of Service</Link>{' '}and{' '}
+          <Link href="/privacy-policy" className="underline">Privacy Policy</Link>.
         </p>
       </div>
     </section>

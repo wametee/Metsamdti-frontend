@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
@@ -58,23 +58,33 @@ export default function BackgroundSeriesOne() {
     '/onboarding/background-series-two'
   );
 
-  // Hook 8: Load saved data from localStorage
-  // This useEffect must be called on every render, even if we return early
+  // Hook 8: Load saved data from localStorage - only once on mount
+  // Use ref to prevent re-loading after user interactions
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    // Only load data once, and only if it hasn't been loaded yet
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setGender(saved.gender || '');
-      // Handle languages - could be string or string[]
-      const savedLanguages = saved.languages;
-      if (Array.isArray(savedLanguages)) {
-        setLanguages(savedLanguages[0] || '');
-      } else if (typeof savedLanguages === 'string') {
-        setLanguages(savedLanguages);
-      } else {
-        setLanguages('');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!gender && saved.gender) {
+        setGender(saved.gender);
       }
-      setBirthday(saved.birthday || '');
+      // Handle languages - could be string or string[]
+      if (!languages) {
+        const savedLanguages = saved.languages;
+        if (Array.isArray(savedLanguages)) {
+          setLanguages(savedLanguages[0] || '');
+        } else if (typeof savedLanguages === 'string') {
+          setLanguages(savedLanguages);
+        }
+      }
+      if (!birthday && saved.birthday) {
+        setBirthday(saved.birthday);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // ============================================================================

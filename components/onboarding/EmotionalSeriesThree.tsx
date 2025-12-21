@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -18,13 +18,22 @@ export default function EmotionalSeriesThree() {
   const [confidenceMoments, setConfidenceMoments] = useState("");
   const [showLove, setShowLove] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setConfidenceMoments(saved.confidenceMoments || '');
-      setShowLove(saved.showLove || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!confidenceMoments && saved.confidenceMoments) {
+        setConfidenceMoments(saved.confidenceMoments);
+      }
+      if (!showLove && saved.showLove) {
+        setShowLove(saved.showLove);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

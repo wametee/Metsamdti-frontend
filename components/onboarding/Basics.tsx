@@ -13,6 +13,64 @@ import { getOnboardingData } from '@/lib/utils/localStorage';
 import { validateRequired, validateAge, validatePhotos, showValidationError } from '@/lib/utils/validation';
 import { StepProgressBar } from './ProgressBar';
 
+// Function to generate display name from full name (creates a unique name that's not close to the original)
+function generateDisplayName(fullName: string): string {
+  if (!fullName || fullName.trim().length === 0) {
+    return '';
+  }
+  
+  // Split name into parts
+  const nameParts = fullName
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(part => part.length > 0)
+    .map(part => part.replace(/[^a-z]/g, '')); // Remove non-letters
+  
+  if (nameParts.length === 0) {
+    return '';
+  }
+  
+  // If only one name part, use first 3-4 letters
+  if (nameParts.length === 1) {
+    const part = nameParts[0];
+    return part.length > 4 ? part.substring(0, 4) : part;
+  }
+  
+  // For multiple name parts, create a unique combination
+  const firstName = nameParts[0];
+  const lastName = nameParts[nameParts.length - 1];
+  
+  // Strategy: Create a display name that's not obviously the full name
+  // Option 1: First 2-3 letters of first name + first 2-3 letters of last name
+  // Option 2: First letter of first name + last name (shortened if needed)
+  // Option 3: First name (shortened) + first letter of last name
+  
+  // Use a combination that makes it less obvious
+  let displayName = '';
+  
+  if (firstName.length >= 3 && lastName.length >= 3) {
+    // Take first 2-3 letters of first name + first 2-3 letters of last name
+    const firstPart = firstName.substring(0, Math.min(3, firstName.length));
+    const lastPart = lastName.substring(0, Math.min(3, lastName.length));
+    displayName = firstPart + lastPart;
+  } else if (firstName.length >= 2 && lastName.length >= 2) {
+    // Shorter names: combine what we have
+    displayName = firstName.substring(0, 2) + lastName.substring(0, 2);
+  } else {
+    // Fallback: use first name if available, otherwise last name
+    displayName = firstName || lastName;
+  }
+  
+  // Ensure minimum length of 3 characters
+  if (displayName.length < 3 && firstName.length + lastName.length >= 3) {
+    // Combine more letters if needed
+    displayName = (firstName.substring(0, 2) + lastName.substring(0, Math.max(1, 3 - firstName.length))).substring(0, 6);
+  }
+  
+  return displayName;
+}
+
 export default function Basics() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -23,17 +81,24 @@ export default function Basics() {
   const [photos, setPhotos] = useState<(File | undefined)[]>(Array(5).fill(undefined));
   const [photoPreviews, setPhotoPreviews] = useState<(string | undefined)[]>(Array(5).fill(undefined));
   const [ageError, setAgeError] = useState<string>("");
-  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+  // Auto-generate display name from full name
+  useEffect(() => {
+    if (fullName.trim()) {
+      const generated = generateDisplayName(fullName);
+      setUsername(generated);
+    } else {
+      setUsername('');
+    }
+  }, [fullName]);
 
   // Load saved data
   useEffect(() => {
     const saved = getOnboardingData();
     if (saved) {
-      setUsername(saved.username || saved.displayName || ''); // Support both for backward compatibility
       setFullName(saved.fullName || '');
       setAge(saved.age || '');
+      // Note: Username will be auto-generated from fullName
       // Note: Photos from localStorage would need to be converted back to File objects
       // For now, we'll just load the previews if they exist as URLs
     }
@@ -60,7 +125,11 @@ export default function Basics() {
   };
 
   // Remove photo at specific index
-  const removePhoto = (index: number) => {
+  const removePhoto = (index: number, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation(); // Prevent triggering the file input
+    }
+    
     // Set to undefined instead of removing, to maintain fixed array length
     const newPhotos = [...photos];
     const newPreviews = [...photoPreviews];
@@ -77,87 +146,19 @@ export default function Basics() {
     }
   };
 
-  // Debounced username check for real-time validation
-  useEffect(() => {
-    const checkUsernameAvailability = async () => {
-      const trimmedUsername = username.trim();
-      
-      // Don't check if username is too short (less than 3 characters)
-      if (trimmedUsername.length < 3) {
-        setShowSuggestions(false);
-        setUsernameSuggestions([]);
-        setIsCheckingUsername(false);
-        return;
-      }
-
-      setIsCheckingUsername(true);
-      setShowSuggestions(false);
-
-      try {
-        const result = await onboardingService.checkUsername(trimmedUsername);
-        
-        // Always show suggestions if available (proactive UX like Facebook/Google)
-        if (result.suggestions && result.suggestions.length > 0) {
-          setUsernameSuggestions(result.suggestions);
-          setShowSuggestions(true);
-        } else {
-          setUsernameSuggestions([]);
-          setShowSuggestions(false);
-        }
-      } catch (error: any) {
-        console.error('Error checking username:', error);
-        // Show error but don't block user
-        setShowSuggestions(false);
-        setUsernameSuggestions([]);
-      } finally {
-        setIsCheckingUsername(false);
-      }
-    };
-
-    // Debounce the check - wait 500ms after user stops typing
-    const timeoutId = setTimeout(checkUsernameAvailability, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [username]);
-
-  // Check username uniqueness on blur (fallback)
-  const handleUsernameBlur = async () => {
-    if (!username.trim()) {
-      setShowSuggestions(false);
-      setUsernameSuggestions([]);
-      return;
-    }
-    
-    // The useEffect will handle the check, but we can also do it here as a fallback
-    if (usernameSuggestions.length === 0 && !isCheckingUsername) {
-      try {
-        const result = await onboardingService.checkUsername(username.trim());
-        if (!result.isAvailable && result.suggestions.length > 0) {
-          setUsernameSuggestions(result.suggestions);
-          setShowSuggestions(true);
-        }
-      } catch (error) {
-        // Ignore - will be checked on submit
-      }
+  // Handle clicking on photo to replace it
+  const handlePhotoClick = (index: number) => {
+    const fileInput = document.getElementById(`photo-upload-${index}`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = ''; // Reset to allow selecting the same file
+      fileInput.click();
     }
   };
 
-  // Custom submit function that handles username suggestions
+
+  // Custom submit function
   const submitBasicsWithSuggestions = async (data: { username: string; fullName: string; age: number; photos?: File[] }) => {
-    try {
-      return await onboardingService.submitBasics(data, '');
-    } catch (err: any) {
-      // Check if error contains suggestions
-      if (err.response?.data?.suggestions) {
-        setUsernameSuggestions(err.response.data.suggestions);
-        setShowSuggestions(true);
-        // Throw error with suggestions attached
-        const errorWithSuggestions = new Error('This username is already taken. Please choose from the suggestions below.');
-        (errorWithSuggestions as any).suggestions = err.response.data.suggestions;
-        throw errorWithSuggestions;
-      }
-      throw err;
-    }
+    return await onboardingService.submitBasics(data, '');
   };
 
   const { handleSubmit, isSubmitting, error: submitError } = useOnboardingSubmit<
@@ -167,33 +168,24 @@ export default function Basics() {
     '/onboarding/background-series-one'
   );
 
-  // Watch for errors with suggestions
-  useEffect(() => {
-    if (submitError && submitError.includes('username')) {
-      // Error message already set, suggestions will be shown if they exist
-    }
-  }, [submitError]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Clear suggestions
-    setShowSuggestions(false);
-    setUsernameSuggestions([]);
-    
-    // Validate username
-    const usernameValidation = validateRequired(username, 'display name');
-    if (!usernameValidation.isValid) {
-      showValidationError(usernameValidation.message!);
-      return;
-    }
-
-    // Validate full name
+    // Validate full name first (display name is auto-generated from it)
     const fullNameValidation = validateRequired(fullName, 'full name');
     if (!fullNameValidation.isValid) {
       showValidationError(fullNameValidation.message!);
       return;
     }
+
+    // Validate display name (auto-generated, but should exist)
+    const usernameValidation = validateRequired(username, 'display name');
+    if (!usernameValidation.isValid) {
+      showValidationError('Please enter a full name to generate your display name');
+      return;
+    }
+
 
     // Validate age
     const ageValidation = validateAge(age);
@@ -264,62 +256,7 @@ export default function Basics() {
         {/* Form Fields */}
   <form onSubmit={onSubmit} className="flex flex-col gap-6 px-0 md:px-0">
 
-          {/* Display Name */}
-          <div>
-            <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Display Name*</label>
-            <input
-              type="text"
-              placeholder="Enter Display Name"
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-                // Don't clear suggestions immediately - let useEffect handle it
-                // This allows real-time checking as user types
-              }}
-              onBlur={handleUsernameBlur}
-              className={`w-3/4 md:w-2/3 bg-[#F6E7EA] border ${
-                showSuggestions ? "border-red-400" : isCheckingUsername ? "border-blue-400" : "border-[#E4D6D6]"
-              } rounded-md py-3 px-4 text-sm text-black outline-none`}
-              required
-            />
-            {isCheckingUsername && (
-              <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3 flex items-center gap-2">
-                <span className="inline-block w-3 h-3 border-2 border-[#702C3E] border-t-transparent rounded-full animate-spin"></span>
-                Checking availability...
-              </p>
-            )}
-            {!isCheckingUsername && username.trim().length >= 3 && !showSuggestions && (
-              <p className="text-xs text-green-600 mt-1 w-3/4 md:w-2/3 flex items-center gap-1">
-                <span>✓</span> Username is available
-              </p>
-            )}
-            {showSuggestions && usernameSuggestions.length > 0 && (
-              <div className="mt-2 w-3/4 md:w-2/3">
-                <p className="text-sm text-[#702C3E] mb-2 font-medium">Suggested usernames:</p>
-                <div className="flex flex-wrap gap-2">
-                  {usernameSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        setUsername(suggestion);
-                        setShowSuggestions(false);
-                        setUsernameSuggestions([]);
-                      }}
-                      className="px-3 py-1.5 bg-[#702C3E] text-white text-sm rounded-md hover:bg-[#5E2333] transition shadow-sm"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {submitError && submitError.includes('username') && !showSuggestions && (
-              <p className="text-sm text-red-600 mt-2 w-3/4 md:w-2/3">{submitError}</p>
-            )}
-          </div>
-
-          {/* Full Name */}
+          {/* Full Name - comes first */}
           <div>
             <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Full Name*</label>
             <input
@@ -330,6 +267,26 @@ export default function Basics() {
               className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
               required
             />
+            <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
+              Your display name will be automatically generated from your full name
+            </p>
+          </div>
+
+          {/* Display Name - auto-generated, read-only */}
+          <div>
+            <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Display Name*</label>
+            <input
+              type="text"
+              placeholder="Display name will be generated automatically"
+              value={username}
+              readOnly
+              disabled
+              className="w-3/4 md:w-2/3 bg-[#E4D6D6] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-[#6B5B5B] outline-none cursor-not-allowed"
+              required
+            />
+            <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
+              This is automatically generated from your full name (letters only, no numbers)
+            </p>
           </div>
 
           {/* Age */}
@@ -380,32 +337,57 @@ export default function Basics() {
 
               {/* Main Large Image (reduced size) - shows first uploaded image */}
               <div className="col-span-3 flex justify-center">
-                <div className="w-32 h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6]">
+                <div 
+                  className="w-32 h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6] cursor-pointer hover:border-[#702C3E] transition-colors group"
+                  onClick={() => handlePhotoClick(0)}
+                >
                   {photoPreviews[0] ? (
-                    <Image 
-                      src={photoPreviews[0]} 
-                      alt="Main photo" 
-                      width={128} 
-                      height={128} 
-                      className="object-cover w-full h-full" 
-                    />
+                    <>
+                      <Image 
+                        src={photoPreviews[0]} 
+                        alt="Main photo" 
+                        width={128} 
+                        height={128} 
+                        className="object-cover w-full h-full" 
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to change
+                        </span>
+                      </div>
+                    </>
                   ) : (
-                    <Image 
-                      src={upload} 
-                      alt="Upload" 
-                      width={128} 
-                      height={128} 
-                      className="object-contain" 
-                    />
+                    <>
+                      <Image 
+                        src={upload} 
+                        alt="Upload" 
+                        width={128} 
+                        height={128} 
+                        className="object-contain opacity-50" 
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <IoMdAdd className="w-8 h-8 text-[#702C3E] opacity-50" />
+                      </div>
+                    </>
                   )}
                 </div>
+                <input
+                  id="photo-upload-0"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhotoChange(0, e)}
+                />
               </div>
 
               {/* Five Small Upload Boxes */}
               <div className="col-span-3 grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((index) => (
                   <div key={index} className="flex flex-col items-center relative">
-                    <div className="w-28 h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative">
+                    <div 
+                      className="w-28 h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
+                      onClick={() => handlePhotoClick(index)}
+                    >
                       {photoPreviews[index] ? (
                         <>
                           <Image 
@@ -415,37 +397,42 @@ export default function Basics() {
                             height={112} 
                             className="object-cover w-full h-full" 
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                            <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                              Click to change
+                            </span>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => removePhoto(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                            onClick={(e) => removePhoto(index, e)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 z-10"
+                            title="Remove photo"
                           >
                             ×
                           </button>
                         </>
                       ) : (
-                        <Image 
-                          src={upload} 
-                          alt="Upload" 
-                          width={112} 
-                          height={112} 
-                          className="object-contain opacity-50" 
-                        />
+                        <>
+                          <Image 
+                            src={upload} 
+                            alt="Upload" 
+                            width={112} 
+                            height={112} 
+                            className="object-contain opacity-50" 
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <IoMdAdd className="w-6 h-6 text-[#702C3E] opacity-50" />
+                          </div>
+                        </>
                       )}
                     </div>
-                    <label 
-                      htmlFor={`photo-upload-${index}`} 
-                      className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
-                    >
-                      <IoMdAdd className="w-4 h-4 text-[#702C3E]" />
-                      <input
-                        id={`photo-upload-${index}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoChange(index, e)}
-                      />
-                    </label>
+                    <input
+                      id={`photo-upload-${index}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handlePhotoChange(index, e)}
+                    />
                   </div>
                 ))}
               </div>
@@ -453,7 +440,10 @@ export default function Basics() {
               <div className="col-span-3 flex justify-center gap-4">
                 {[3, 4].map((index) => (
                   <div key={index} className="flex flex-col items-center relative">
-                    <div className="w-28 h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative">
+                    <div 
+                      className="w-28 h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
+                      onClick={() => handlePhotoClick(index)}
+                    >
                       {photoPreviews[index] ? (
                         <>
                           <Image 
@@ -463,37 +453,42 @@ export default function Basics() {
                             height={112} 
                             className="object-cover w-full h-full" 
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                            <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                              Click to change
+                            </span>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => removePhoto(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                            onClick={(e) => removePhoto(index, e)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 z-10"
+                            title="Remove photo"
                           >
                             ×
                           </button>
                         </>
                       ) : (
-                        <Image 
-                          src={upload} 
-                          alt="Upload" 
-                          width={112} 
-                          height={112} 
-                          className="object-contain opacity-50" 
-                        />
+                        <>
+                          <Image 
+                            src={upload} 
+                            alt="Upload" 
+                            width={112} 
+                            height={112} 
+                            className="object-contain opacity-50" 
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <IoMdAdd className="w-6 h-6 text-[#702C3E] opacity-50" />
+                          </div>
+                        </>
                       )}
                     </div>
-                    <label 
-                      htmlFor={`photo-upload-${index}`} 
-                      className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
-                    >
-                      <IoMdAdd className="w-4 h-4 text-[#702C3E]" />
-                      <input
-                        id={`photo-upload-${index}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoChange(index, e)}
-                      />
-                    </label>
+                    <input
+                      id={`photo-upload-${index}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handlePhotoChange(index, e)}
+                    />
                   </div>
                 ))}
               </div>
@@ -527,13 +522,12 @@ export default function Basics() {
             </button>
           </div>
         </form>
-
-        {/* Footer Text */}
-        <p className="text-center text-xs text-[#6B5B5B] mt-6">
-          By continuing, you agree to our <span className="underline">Terms of Use</span> and <span className="underline">Privacy Policy</span>.
-        </p>
-
       </div>
+
+      {/* Footer Text */}
+      <p className="text-center text-xs text-[#6B5B5B] mt-6">
+        By continuing, you agree to our <span className="underline">Terms of Use</span> and <span className="underline">Privacy Policy</span>.
+      </p>
     </section>
   );
 }

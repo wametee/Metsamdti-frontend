@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -19,14 +19,25 @@ export default function EmotionalSeriesTwo() {
   const [feelsLoved, setFeelsLoved] = useState("");
   const [deepConnection, setDeepConnection] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setPreferredEmotionalEnergy(saved.preferredEmotionalEnergy || '');
-      setFeelsLoved(saved.feelsLoved || '');
-      setDeepConnection(saved.deepConnection || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!preferredEmotionalEnergy && saved.preferredEmotionalEnergy) {
+        setPreferredEmotionalEnergy(saved.preferredEmotionalEnergy);
+      }
+      if (!feelsLoved && saved.feelsLoved) {
+        setFeelsLoved(saved.feelsLoved);
+      }
+      if (!deepConnection && saved.deepConnection) {
+        setDeepConnection(saved.deepConnection);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

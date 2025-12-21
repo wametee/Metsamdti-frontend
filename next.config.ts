@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    minimumCacheTTL: process.env.NODE_ENV === 'development' ? 0 : 60 * 60 * 24 * 30, // No cache in dev, 30 days in prod
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
@@ -25,6 +25,18 @@ const nextConfig: NextConfig = {
         pathname: '/uploads/**',
       },
       {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/uploads/**',
+      },
+      {
         protocol: 'https',
         hostname: '**.supabase.co',
         pathname: '/storage/v1/object/public/**',
@@ -33,6 +45,17 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**.supabase.in',
         pathname: '/storage/v1/object/public/**',
+      },
+      // Allow any hostname for API URLs (for production deployments)
+      {
+        protocol: 'http',
+        hostname: '**',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+        pathname: '/uploads/**',
       },
     ],
   },
@@ -50,6 +73,8 @@ const nextConfig: NextConfig = {
   
   // Headers for caching and security
   async headers() {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
     return [
       {
         source: '/:path*',
@@ -69,7 +94,12 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin'
-          }
+          },
+          // Disable caching in development
+          ...(isDevelopment ? [{
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          }] : []),
         ],
       },
       {
@@ -77,7 +107,9 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: isDevelopment 
+              ? 'no-cache, no-store, must-revalidate'
+              : 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -86,7 +118,9 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: isDevelopment 
+              ? 'no-cache, no-store, must-revalidate'
+              : 'public, max-age=31536000, immutable',
           },
         ],
       },

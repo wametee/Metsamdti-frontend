@@ -108,7 +108,7 @@ export default function Home() {
           <div className="relative flex flex-col md:flex-row md:items-start gap-10">
 
             {/* Left Image */}
-            <div className="relative w-full md:w-[460px] rounded-3xl overflow-hidden shadow-lg h-[430px] sm:h-[480px] md:h-[565px]">
+            <div className="relative w-full md:w-[460px] overflow-hidden shadow-lg" style={{ height: '565px', minHeight: '565px' }}>
              <Image
                 src={HowItWorks}
                 alt="HowItWorks"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -14,22 +14,36 @@ import { showValidationError, validationMessages } from '@/lib/utils/validation'
 
 export default function BackgroundSeriesFive() {
   const router = useRouter();
-  const [openToPartnerWithChildren, setOpenToPartnerWithChildren] = useState<boolean | null>(null);
+  const [openToPartnerWithChildren, setOpenToPartnerWithChildren] = useState<"Yes" | "No" | "Depends" | null>(null);
   const [idealMarriageTimeline, setIdealMarriageTimeline] = useState("");
   const [minAge, setMinAge] = useState("");
   const [maxAge, setMaxAge] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      if (saved.openToPartnerWithChildren !== undefined) setOpenToPartnerWithChildren(saved.openToPartnerWithChildren);
-      if (saved.idealMarriageTimeline) setIdealMarriageTimeline(saved.idealMarriageTimeline);
-      if (saved.preferredAgeRange) {
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (openToPartnerWithChildren === null && saved.openToPartnerWithChildren !== undefined) {
+        // Convert boolean to string representation
+        if (saved.openToPartnerWithChildren === true) {
+          setOpenToPartnerWithChildren("Yes");
+        } else if (saved.openToPartnerWithChildren === false) {
+          setOpenToPartnerWithChildren("No");
+        }
+      }
+      if (!idealMarriageTimeline && saved.idealMarriageTimeline) {
+        setIdealMarriageTimeline(saved.idealMarriageTimeline);
+      }
+      if (!minAge && !maxAge && saved.preferredAgeRange) {
         setMinAge(saved.preferredAgeRange.min?.toString() || '');
         setMaxAge(saved.preferredAgeRange.max?.toString() || '');
       }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook
@@ -71,15 +85,19 @@ export default function BackgroundSeriesFive() {
       return;
     }
     
+    // Convert string value to boolean for backend compatibility
+    // "Yes" or "Depends" -> true, "No" -> false
+    const openToPartnerBoolean = openToPartnerWithChildren === "Yes" || openToPartnerWithChildren === "Depends";
+    
     handleSubmit({
-      openToPartnerWithChildren,
+      openToPartnerWithChildren: openToPartnerBoolean,
       preferredAgeRange: { min: minAgeNum, max: maxAgeNum },
       idealMarriageTimeline,
     }, e);
   };
 
-  const handleChildrenPreference = (value: string) => {
-    setOpenToPartnerWithChildren(value === "Yes" || value === "Depends");
+  const handleChildrenPreference = (value: "Yes" | "No" | "Depends") => {
+    setOpenToPartnerWithChildren(value);
   };
 
   return (
@@ -149,7 +167,7 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={openToPartnerWithChildren === false}
+                  checked={openToPartnerWithChildren === "No"}
                   onChange={() => handleChildrenPreference("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -168,7 +186,7 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={openToPartnerWithChildren === true}
+                  checked={openToPartnerWithChildren === "Yes"}
                   onChange={() => handleChildrenPreference("Yes")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -187,7 +205,7 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={openToPartnerWithChildren === true}
+                  checked={openToPartnerWithChildren === "Depends"}
                   onChange={() => handleChildrenPreference("Depends")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />

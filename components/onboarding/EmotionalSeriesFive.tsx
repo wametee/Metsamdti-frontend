@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -21,14 +21,25 @@ export default function EmotionalSeriesFive() {
   const [valuedRelationship, setValuedRelationship] = useState("");
   const [isEmotionalCompleteOpen, setIsEmotionalCompleteOpen] = useState(false);
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setCommunicationStyle(saved.communicationStyle || '');
-      setLifeApproach(saved.lifeApproach || '');
-      setValuedRelationship(saved.valuedRelationship || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!communicationStyle && saved.communicationStyle) {
+        setCommunicationStyle(saved.communicationStyle);
+      }
+      if (!lifeApproach && saved.lifeApproach) {
+        setLifeApproach(saved.lifeApproach);
+      }
+      if (!valuedRelationship && saved.valuedRelationship) {
+        setValuedRelationship(saved.valuedRelationship);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

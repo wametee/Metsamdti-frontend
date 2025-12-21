@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -17,13 +17,22 @@ export default function BackgroundSeriesEight() {
   const [faithImportance, setFaithImportance] = useState("");
   const [genderRolesInMarriage, setGenderRolesInMarriage] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setFaithImportance(saved.faithImportance || '');
-      setGenderRolesInMarriage(saved.genderRolesInMarriage || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!faithImportance && saved.faithImportance) {
+        setFaithImportance(saved.faithImportance);
+      }
+      if (!genderRolesInMarriage && saved.genderRolesInMarriage) {
+        setGenderRolesInMarriage(saved.genderRolesInMarriage);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

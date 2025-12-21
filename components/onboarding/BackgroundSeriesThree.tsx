@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -27,13 +27,22 @@ export default function BackgroundSeriesThree() {
     '/onboarding/background-series-four'
   );
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setEducation(saved.education || '');
-      setOccupation(saved.occupation || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!education && saved.education) {
+        setEducation(saved.education);
+      }
+      if (!occupation && saved.occupation) {
+        setOccupation(saved.occupation);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Show loading state while validating

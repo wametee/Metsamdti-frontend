@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -21,14 +21,25 @@ export default function BackgroundSeriesSix() {
   const [conflictHandling, setConflictHandling] = useState("");
   const [coreValues, setCoreValues] = useState<string[]>([]);
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setWeekendActivities(saved.weekendActivities || '');
-      setConflictHandling(saved.conflictHandling || '');
-      setCoreValues(saved.coreValues || []);
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!weekendActivities && saved.weekendActivities) {
+        setWeekendActivities(saved.weekendActivities);
+      }
+      if (!conflictHandling && saved.conflictHandling) {
+        setConflictHandling(saved.conflictHandling);
+      }
+      if (coreValues.length === 0 && saved.coreValues && Array.isArray(saved.coreValues)) {
+        setCoreValues(saved.coreValues);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

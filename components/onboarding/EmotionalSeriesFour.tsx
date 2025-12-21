@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -19,14 +19,25 @@ export default function EmotionalSeriesFour() {
   const [lovedOneUpsetResponse, setLovedOneUpsetResponse] = useState("");
   const [refillEmotionalEnergy, setRefillEmotionalEnergy] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setDisagreementResponse(saved.disagreementResponse || '');
-      setLovedOneUpsetResponse(saved.lovedOneUpsetResponse || '');
-      setRefillEmotionalEnergy(saved.refillEmotionalEnergy || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!disagreementResponse && saved.disagreementResponse) {
+        setDisagreementResponse(saved.disagreementResponse);
+      }
+      if (!lovedOneUpsetResponse && saved.lovedOneUpsetResponse) {
+        setLovedOneUpsetResponse(saved.lovedOneUpsetResponse);
+      }
+      if (!refillEmotionalEnergy && saved.refillEmotionalEnergy) {
+        setRefillEmotionalEnergy(saved.refillEmotionalEnergy);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

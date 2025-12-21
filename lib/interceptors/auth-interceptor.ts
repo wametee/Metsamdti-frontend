@@ -39,8 +39,14 @@ const AuthInterceptor = (httpClient: AxiosInstance) => {
           // Clear invalid token
           localStorage.removeItem("auth_token");
           
-          // Redirect to login if not already there
-          if (!window.location.pathname.includes("/login")) {
+          // Don't redirect if we're on accept-terms page or if the request was for accept-terms
+          const currentPath = window.location.pathname;
+          const requestUrl = error.config?.url || '';
+          const isAcceptTermsPage = currentPath.includes("/accept-terms") || currentPath.includes("/onboarding/accept-terms");
+          const isAcceptTermsRequest = requestUrl.includes("accept-terms");
+          
+          // Redirect to login if not already there and not on accept-terms page/request
+          if (!currentPath.includes("/login") && !isAcceptTermsPage && !isAcceptTermsRequest) {
             window.location.href = "/login";
           }
         }

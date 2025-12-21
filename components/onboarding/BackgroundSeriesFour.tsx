@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -14,15 +14,31 @@ import { StepProgressBar } from './ProgressBar';
 export default function BackgroundSeriesFour() {
   const router = useRouter();
   const [previouslyMarried, setPreviouslyMarried] = useState<boolean | null>(null);
-  const [hasChildren, setHasChildren] = useState<boolean | null>(null);
+  const [hasChildren, setHasChildren] = useState<"Yes" | "No" | "Prefer not to say" | null>(null);
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      if (saved.previouslyMarried !== undefined) setPreviouslyMarried(saved.previouslyMarried);
-      if (saved.hasChildren !== undefined) setHasChildren(saved.hasChildren);
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (previouslyMarried === null && saved.previouslyMarried !== undefined) {
+        setPreviouslyMarried(saved.previouslyMarried);
+      }
+      if (hasChildren === null && saved.hasChildren !== undefined) {
+        // Convert boolean to string representation
+        if (saved.hasChildren === true) {
+          setHasChildren("Yes");
+        } else if (saved.hasChildren === false) {
+          setHasChildren("No");
+        } else {
+          setHasChildren(null);
+        }
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook
@@ -43,19 +59,20 @@ export default function BackgroundSeriesFour() {
       alert('Please answer if you have children');
       return;
     }
-    handleSubmit({ previouslyMarried, hasChildren }, e);
+    
+    // Convert string value to boolean for backend compatibility
+    // "Yes" -> true, "No" or "Prefer not to say" -> false
+    const hasChildrenBoolean = hasChildren === "Yes";
+    
+    handleSubmit({ previouslyMarried, hasChildren: hasChildrenBoolean }, e);
   };
 
   const handleMaritalStatus = (value: string) => {
     setPreviouslyMarried(value !== "No");
   };
 
-  const handleChildren = (value: string) => {
-    if (value === "Prefer not to say") {
-      setHasChildren(false); // Default to false for "prefer not to say"
-    } else {
-      setHasChildren(value === "Yes");
-    }
+  const handleChildren = (value: "Yes" | "No" | "Prefer not to say") => {
+    setHasChildren(value);
   };
 
   return (
@@ -182,7 +199,7 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={hasChildren === false}
+                  checked={hasChildren === "No"}
                   onChange={() => handleChildren("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -202,7 +219,7 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={hasChildren === true}
+                  checked={hasChildren === "Yes"}
                   onChange={() => handleChildren("Yes")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -222,7 +239,7 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={hasChildren === false}
+                  checked={hasChildren === "Prefer not to say"}
                   onChange={() => handleChildren("Prefer not to say")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />

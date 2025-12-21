@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
@@ -18,14 +18,25 @@ export default function BackgroundSeriesTwo() {
   const [livingSituation, setLivingSituation] = useState<string>("");
   const [birthLocation, setBirthLocation] = useState<string>("");
 
-  // Load saved data from localStorage
+  // Load saved data from localStorage - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setCurrentLocation(saved.currentLocation || '');
-      setLivingSituation(saved.livingSituation || '');
-      setBirthLocation(saved.birthLocation || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!currentLocation && saved.currentLocation) {
+        setCurrentLocation(saved.currentLocation);
+      }
+      if (!livingSituation && saved.livingSituation) {
+        setLivingSituation(saved.livingSituation);
+      }
+      if (!birthLocation && saved.birthLocation) {
+        setBirthLocation(saved.birthLocation);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use the reusable submit hook

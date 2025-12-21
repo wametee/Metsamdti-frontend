@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -19,14 +19,25 @@ export default function BackgroundSeriesNine() {
   const [biggestDealBreaker, setBiggestDealBreaker] = useState("");
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      if (saved.preferOwnBackground !== undefined) setPreferOwnBackground(saved.preferOwnBackground);
-      setFutureFamilyVision(saved.futureFamilyVision || '');
-      setBiggestDealBreaker(saved.biggestDealBreaker || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (preferOwnBackground === null && saved.preferOwnBackground !== undefined) {
+        setPreferOwnBackground(saved.preferOwnBackground);
+      }
+      if (!futureFamilyVision && saved.futureFamilyVision) {
+        setFutureFamilyVision(saved.futureFamilyVision);
+      }
+      if (!biggestDealBreaker && saved.biggestDealBreaker) {
+        setBiggestDealBreaker(saved.biggestDealBreaker);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook

@@ -101,6 +101,9 @@ export interface SubmitEmotionalSeriesFiveRequest {
 export interface CompleteApplicationRequest {
   email: string;
   password: string;
+  phone?: string;
+  phone_country_code?: string;
+  phone_number?: string;
 }
 
 export interface OnboardingResponse {
@@ -553,6 +556,9 @@ class OnboardingService {
           ...allData,
           email: data.email,
           password: data.password, // Backend will handle encryption
+          phone: data.phone,
+          phone_country_code: data.phone_country_code,
+          phone_number: data.phone_number,
         },
         {
           headers: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -19,14 +19,25 @@ export default function EmotionalSeriesOne() {
   const [conflictEmotionalResponse, setConflictEmotionalResponse] = useState("");
   const [decisionMakingGuide, setDecisionMakingGuide] = useState("");
 
-  // Load saved data
+  // Load saved data - only once on mount
+  const dataLoadedRef = useRef(false);
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    
     const saved = getOnboardingData();
     if (saved) {
-      setEmotionalBalance(saved.emotionalBalance || '');
-      setConflictEmotionalResponse(saved.conflictEmotionalResponse || '');
-      setDecisionMakingGuide(saved.decisionMakingGuide || '');
+      // Only set values if they're not already set (to avoid overwriting user input)
+      if (!emotionalBalance && saved.emotionalBalance) {
+        setEmotionalBalance(saved.emotionalBalance);
+      }
+      if (!conflictEmotionalResponse && saved.conflictEmotionalResponse) {
+        setConflictEmotionalResponse(saved.conflictEmotionalResponse);
+      }
+      if (!decisionMakingGuide && saved.decisionMakingGuide) {
+        setDecisionMakingGuide(saved.decisionMakingGuide);
+      }
     }
+    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook
