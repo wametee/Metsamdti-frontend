@@ -92,7 +92,7 @@ export default function Basics() {
     }
   }, [fullName]);
 
-  // Load saved data
+  // Load saved data or current user data (for Google sign-up users)
   useEffect(() => {
     const saved = getOnboardingData();
     if (saved) {
@@ -101,6 +101,30 @@ export default function Basics() {
       // Note: Username will be auto-generated from fullName
       // Note: Photos from localStorage would need to be converted back to File objects
       // For now, we'll just load the previews if they exist as URLs
+    } else {
+      // If no saved data, try to get current user data (for Google sign-up users)
+      // This allows them to see their Google name and change it if needed
+      const loadUserData = async () => {
+        try {
+          const authService = (await import('@/services/auth/authService')).default;
+          const userResult = await authService.getCurrentUser();
+          if (userResult.success && userResult.user && userResult.user.real_name) {
+            // Pre-fill with Google user data, but allow them to change it
+            setFullName(userResult.user.real_name);
+            // Display name will be auto-generated from full name
+          }
+        } catch (error: any) {
+          // Silently fail - 401 is expected if user isn't logged in yet
+          // This is normal during onboarding, so we don't show any errors
+          if (error?.status !== 401 && error?.code !== 'UNAUTHORIZED') {
+            // Only log non-401 errors in development
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Could not load user data for pre-fill:', error);
+            }
+          }
+        }
+      };
+      loadUserData();
     }
   }, []);
 

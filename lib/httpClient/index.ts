@@ -16,7 +16,30 @@ const httpClient: AxiosInstance = axios.create({
   withCredentials: true, // Include cookies for auth
 });
 
-// Apply interceptors
+/**
+ * Interceptor Registration Order
+ * 
+ * Axios interceptors execute in REVERSE order for error handlers:
+ * - Last registered = First to execute
+ * - First registered = Last to execute
+ * 
+ * Current order (registration → execution):
+ * 1. AuthInterceptor (registered first) → runs LAST
+ *    - Handles 401s, determines redirects, marks public route errors as silent
+ * 
+ * 2. CaptchaInterceptor (registered second) → runs MIDDLE
+ *    - Adds captcha tokens to requests
+ * 
+ * 3. ErrorInterceptor (registered last) → runs FIRST
+ *    - Skips 401s (passes to auth interceptor)
+ *    - Handles all other errors (400, 403, 404, 500, etc.)
+ *    - Shows toast notifications for user-facing errors
+ * 
+ * This ensures:
+ * - ErrorInterceptor sees 401s first and passes them through
+ * - AuthInterceptor handles 401s intelligently (public vs protected routes)
+ * - Public route 401s are silently handled (no redirects, no toasts)
+ */
 AuthInterceptor(httpClient);
 CaptchaInterceptor(httpClient);
 ErrorInterceptor(httpClient);

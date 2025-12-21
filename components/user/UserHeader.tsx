@@ -102,40 +102,48 @@ export default function UserHeader({
   };
 
   return (
-    <div className={`flex items-center justify-between px-6 py-5 ${className}`}>
+    <div className={`flex items-center justify-between px-4 md:px-6 py-3 md:py-5 ${className}`}>
       {/* Left - Back Button + Logo */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {showBackButton && (
           <button
             onClick={handleBack}
-            className="p-2 rounded-md text-[#702C3E] hover:bg-white/60 transition z-40"
+            className="p-1.5 md:p-2 rounded-md text-[#702C3E] hover:bg-white/60 transition z-40"
+            aria-label="Go back"
           >
-            <FaArrowLeft className="w-5 h-5" />
+            <FaArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         )}
-        <Image src={logo} alt="Metsamdti Logo" width={80} height={80} className="object-contain" />
+        <Image 
+          src={logo} 
+          alt="Metsamdti Logo" 
+          width={60} 
+          height={60} 
+          className="object-contain w-12 h-12 md:w-20 md:h-20" 
+        />
       </div>
 
       {/* Right - User Dropdown + Language Switcher */}
-      <div className="flex items-center gap-4 text-[#702C3E] text-sm z-40">
+      <div className="flex items-center gap-2 md:gap-4 text-[#702C3E] text-xs md:text-sm z-40">
         {/* User Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-            className="flex items-center gap-1 border border-[#E5D5D5] rounded-md px-3 py-1.5 cursor-pointer bg-white/60 hover:bg-white/80 transition"
+            className="flex items-center gap-1 border border-[#E5D5D5] rounded-md px-2 py-1 md:px-3 md:py-1.5 cursor-pointer bg-white/60 hover:bg-white/80 transition"
+            aria-label="User menu"
           >
-            <span className="font-medium">{loading ? "..." : userName}</span>
-            <RiArrowDropDownLine className="w-5 h-5" />
+            <span className="font-medium truncate max-w-[80px] md:max-w-none">{loading ? "..." : userName}</span>
+            <RiArrowDropDownLine className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
           </button>
 
           {userDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+            <div className="absolute right-0 mt-2 w-40 md:w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
               <button
                 onClick={() => {
                   router.push('/user/profile');
                   setUserDropdownOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 hover:bg-[#F6E7EA] transition-colors first:rounded-t-md text-gray-700"
+                className="w-full text-left px-3 md:px-4 py-2 hover:bg-[#F6E7EA] transition-colors first:rounded-t-md text-gray-700 text-sm"
               >
                 Profile
               </button>
@@ -144,7 +152,7 @@ export default function UserHeader({
                   handleLogout();
                   setUserDropdownOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 hover:bg-[#F6E7EA] transition-colors last:rounded-b-md text-gray-700"
+                className="w-full text-left px-3 md:px-4 py-2 hover:bg-[#F6E7EA] transition-colors last:rounded-b-md text-gray-700 text-sm"
               >
                 Logout
               </button>
@@ -153,7 +161,9 @@ export default function UserHeader({
         </div>
 
         {/* Language Switcher */}
-        <LanguageSwitcher />
+        <div className="hidden sm:block">
+          <LanguageSwitcher />
+        </div>
       </div>
     </div>
   );

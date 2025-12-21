@@ -1,11 +1,21 @@
-import { AxiosInstance, InternalAxiosRequestConfig } from "axios";
+import { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from "axios";
+import { shouldRedirectToLogin } from "../config/routes";
 
 /**
  * Auth Interceptor
- * Automatically adds authentication token to requests
- * Handles token refresh and storage
+ * 
+ * Responsibilities:
+ * 1. Request Interceptor: Attach auth token to outgoing requests
+ * 2. Response Success: Store tokens from successful auth responses
+ * 3. Response Error: Handle 401 errors intelligently
+ *    - Protected routes: Clear token and redirect to login
+ *    - Public routes: Mark error as silent (no redirect, no toast)
+ * 
+ * Note: This interceptor runs AFTER ErrorInterceptor (registered first = runs last)
+ * This allows ErrorInterceptor to skip 401s, then AuthInterceptor handles them properly
  */
 const AuthInterceptor = (httpClient: AxiosInstance) => {
+  // Request interceptor: Attach auth token to requests
   httpClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       // Get token from localStorage (client-side only)
@@ -24,34 +34,42 @@ const AuthInterceptor = (httpClient: AxiosInstance) => {
     }
   );
 
+  // Response interceptor: Handle auth errors and token storage
   httpClient.interceptors.response.use(
     (response) => {
-      // Optionally store token from response
+      // Store token from response if provided (e.g., after login/signup)
       if (response.data?.token && typeof window !== "undefined") {
         localStorage.setItem("auth_token", response.data.token);
       }
       return response;
     },
-    async (error) => {
-      // Handle 401 Unauthorized - token expired or invalid
+    async (error: AxiosError) => {
+      // Handle 401 Unauthorized errors
       if (error.response?.status === 401) {
         if (typeof window !== "undefined") {
-          // Clear invalid token
-          localStorage.removeItem("auth_token");
-          
-          // Don't redirect if we're on accept-terms page or if the request was for accept-terms
           const currentPath = window.location.pathname;
           const requestUrl = error.config?.url || '';
-          const isAcceptTermsPage = currentPath.includes("/accept-terms") || currentPath.includes("/onboarding/accept-terms");
-          const isAcceptTermsRequest = requestUrl.includes("accept-terms");
           
-          // Redirect to login if not already there and not on accept-terms page/request
-          if (!currentPath.includes("/login") && !isAcceptTermsPage && !isAcceptTermsRequest) {
+          // Use centralized route configuration to determine if redirect is needed
+          const needsRedirect = shouldRedirectToLogin(currentPath, requestUrl, 401);
+          
+          if (needsRedirect) {
+            // Clear invalid/expired token
+            localStorage.removeItem("auth_token");
+            // Redirect to login on protected routes
             window.location.href = "/login";
+            // Reject to stop further processing
+            return Promise.reject(error);
+          } else {
+            // On public routes, 401 is expected - mark error as silent
+            // This prevents error interceptor from showing toasts/logs
+            (error as any).isExpected = true;
+            (error as any).silent = true;
           }
         }
       }
 
+      // Pass through all errors (marked or not)
       return Promise.reject(error);
     }
   );

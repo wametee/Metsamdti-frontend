@@ -9,6 +9,7 @@ import logo from "@/assets/logo2.png";
 import authService from "@/services/auth/authService";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import httpClient from "@/lib/httpClient";
+import { getImageUrl, isLocalImage, extractStorageInfo, extractStorageKeyFromUrl } from "@/lib/utils/imageUrl";
 
 interface ProfileData {
   display_name?: string;
@@ -87,20 +88,53 @@ export default function ProfileView() {
         
         if (result.success && result.profile) {
           console.log('Profile data received:', result.profile);
+          console.log('Profile display_name:', result.profile.display_name);
+          console.log('Profile full_name:', result.profile.full_name);
+          console.log('Profile status:', result.profile.status);
+          console.log('Profile photos:', result.profile.photos);
           console.log('Questionnaire data:', result.profile.questionnaire_data);
           console.log('Background data:', result.profile.questionnaire_data?.background);
           console.log('Emotional data:', result.profile.questionnaire_data?.emotional);
           console.log('Emotional series keys:', Object.keys(result.profile.questionnaire_data?.emotional || {}));
-          setProfileData(result.profile);
-          setEditData(result.profile);
+          
+          // Ensure profile has all required fields, even if NULL
+          const completeProfile = {
+            ...result.profile,
+            display_name: result.profile.display_name || 'User',
+            full_name: result.profile.full_name || null,
+            photos: result.profile.photos || [],
+          };
+          
+          // Normalize string values (trim whitespace) to ensure proper matching with options
+          const normalizedProfile = {
+            ...completeProfile,
+            education: completeProfile.education ? String(completeProfile.education).trim() : null,
+            weekend_activities: completeProfile.weekend_activities ? String(completeProfile.weekend_activities).trim() : null,
+            love_language: completeProfile.love_language ? String(completeProfile.love_language).trim() : null,
+            gender_roles_in_marriage: completeProfile.gender_roles_in_marriage ? String(completeProfile.gender_roles_in_marriage).trim() : null,
+            living_situation: completeProfile.living_situation ? String(completeProfile.living_situation).trim() : null,
+            ideal_marriage_timeline: completeProfile.ideal_marriage_timeline ? String(completeProfile.ideal_marriage_timeline).trim() : null,
+            conflict_handling: completeProfile.conflict_handling ? String(completeProfile.conflict_handling).trim() : null,
+            faith_importance: completeProfile.faith_importance ? String(completeProfile.faith_importance).trim() : null,
+          };
+          
+          setProfileData(normalizedProfile);
+          setEditData({ ...normalizedProfile }); // Deep copy to ensure independence
+          
           // Initialize photos from existing profile
-          if (result.profile.photos && result.profile.photos.length > 0) {
-            const existingPhotoUrls = result.profile.photos
+          if (completeProfile.photos && completeProfile.photos.length > 0) {
+            const existingPhotoUrls = completeProfile.photos
               .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-              .map((photo: any) => photo.url || photo.storage_key || '');
-            setPhotoPreviews(existingPhotoUrls.filter((url: string) => url));
+              .map((photo: any) => getImageUrl(photo))
+              .filter((url: string | null): url is string => url !== null);
+            setPhotoPreviews(existingPhotoUrls);
+            console.log('Initialized photo previews:', existingPhotoUrls);
+          } else {
+            console.log('No photos found in profile');
+            setPhotoPreviews([]);
           }
         } else {
+          console.error('Profile fetch failed:', result.message);
           setError(result.message || "No profile found");
         }
       } catch (err: any) {
@@ -116,7 +150,8 @@ export default function ProfileView() {
   // Handle edit mode toggle
   const handleEdit = () => {
     setIsEditing(true);
-    setEditData(profileData);
+    // Deep copy to ensure all values are preserved
+    setEditData(profileData ? { ...profileData } : null);
   };
 
   const handleCancel = () => {
@@ -216,7 +251,7 @@ export default function ProfileView() {
       setSaving(true);
 
       // Upload new photos first if any
-      let uploadedPhotoUrls: string[] = [];
+      let uploadedPhotoData: Array<{ url: string; path?: string; bucket?: string }> = [];
       const newPhotos = editPhotos.filter((photo): photo is File => photo instanceof File);
       
       if (newPhotos.length > 0) {
@@ -231,7 +266,16 @@ export default function ProfileView() {
               "Content-Type": "multipart/form-data",
             },
           });
-          uploadedPhotoUrls = uploadResponse.data.urls || uploadResponse.data.fileUrl?.map((f: any) => f.url) || [];
+          
+          // Get file data with path and bucket information
+          const fileData = uploadResponse.data.fileUrl || [];
+          uploadedPhotoData = fileData.map((f: any) => ({
+            url: f.url || f,
+            path: f.path,
+            bucket: f.bucket,
+          }));
+          
+          console.log('Uploaded photo data:', uploadedPhotoData);
         } catch (uploadError: any) {
           console.error('Photo upload error:', uploadError);
           alert('Failed to upload photos: ' + (uploadError.message || 'Unknown error'));
@@ -247,18 +291,52 @@ export default function ProfileView() {
       photoPreviews.forEach((preview, index) => {
         const photo = editPhotos[index];
         if (photo instanceof File) {
-          // New uploaded photo
-          if (uploadedPhotoUrls[uploadedIndex]) {
+          // New uploaded photo - use path and bucket from upload response
+          if (uploadedPhotoData[uploadedIndex]) {
+            const photoInfo = uploadedPhotoData[uploadedIndex];
+            let storageKey = '';
+            let bucket = photoInfo.bucket || 'uploads';
+            
+            // Extract storage_key from path if available, otherwise from URL
+            if (photoInfo.path) {
+              // Path format: "public/filename.jpg" or "uploads/filename.jpg"
+              // For Supabase, storage_key should be the path after bucket, or just filename
+              const pathParts = photoInfo.path.split('/');
+              if (pathParts[0] === 'public' && pathParts.length > 1) {
+                // Supabase format: public/filename.jpg -> storage_key: filename.jpg
+                storageKey = pathParts.slice(1).join('/');
+              } else {
+                // Local format: uploads/filename.jpg -> storage_key: filename.jpg
+                storageKey = pathParts[pathParts.length - 1];
+              }
+            } else if (photoInfo.url) {
+              // Use utility function to extract storage info
+              const extracted = extractStorageInfo(photoInfo.url);
+              if (extracted) {
+                storageKey = extracted.storage_key;
+                bucket = extracted.bucket;
+              } else {
+                // Fallback: use filename
+                storageKey = photoInfo.url.split('/').pop() || `photo-${index}`;
+              }
+            } else {
+              storageKey = `photo-${index}-${Date.now()}`;
+            }
+            
+            console.log(`Photo ${index + 1} - URL: ${photoInfo.url}, Path: ${photoInfo.path}, Storage Key: ${storageKey}, Bucket: ${bucket}`);
+            
             photosData.push({
-              url: uploadedPhotoUrls[uploadedIndex],
+              url: photoInfo.url,
+              storage_key: storageKey,
+              bucket: bucket,
               order: index,
             });
             uploadedIndex++;
           }
         } else {
           // Existing photo - try to extract URL from preview or use existing photo data
-          const existingPhoto = profileData?.photos?.find((p: any) => {
-            const photoUrl = p.url || (p.storage_key ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${p.bucket || 'uploads'}/${p.storage_key}` : '');
+              const existingPhoto = profileData?.photos?.find((p: any) => {
+            const photoUrl = getImageUrl(p);
             return photoUrl === preview || p.url === preview;
           });
           
@@ -266,24 +344,94 @@ export default function ProfileView() {
             photosData.push({
               url: existingPhoto.url || preview,
               storage_key: existingPhoto.storage_key,
-              bucket: existingPhoto.bucket,
+              bucket: existingPhoto.bucket || 'uploads',
               order: index,
             });
           } else {
-            photosData.push({
-              url: preview,
-              order: index,
-            });
+            // Try to extract storage key from preview URL using utility function
+            const extracted = extractStorageInfo(preview);
+            if (extracted) {
+              photosData.push({
+                url: preview,
+                storage_key: extracted.storage_key,
+                bucket: extracted.bucket,
+                order: index,
+              });
+            } else {
+              // Fallback: use preview as URL and extract filename
+              const storageKey = preview.split('/').pop() || `photo-${index}`;
+              photosData.push({
+                url: preview,
+                storage_key: storageKey,
+                bucket: 'uploads',
+                order: index,
+              });
+            }
           }
         }
       });
+      
+      console.log('Photos data to send:', photosData);
 
-      // Prepare update data
-      const { photos: _, ...profileUpdateData } = editData;
+      // Prepare update data - only include valid profile fields
+      // Exclude system fields and questionnaire_data (stored in individual columns)
+      const editDataAny = editData as any;
+      const { 
+        photos: _, 
+        id: __id, 
+        user_id: __user_id, 
+        created_at: __created_at,
+        questionnaire_data: __questionnaire_data,
+        ...profileUpdateData 
+      } = editDataAny || {};
+      
+      // Remove any undefined/null values, but keep empty strings for text fields
+      // Also ensure boolean values are properly converted
+      const cleanProfileData: any = {};
+      for (const [key, value] of Object.entries(profileUpdateData)) {
+        if (value !== undefined && value !== null) {
+          // For boolean fields, ensure they're actual booleans
+          if (key === 'previously_married' || key === 'has_children' || 
+              key === 'open_to_partner_with_children' || key === 'prefer_own_background') {
+            // These should already be booleans from handleFieldChange, but ensure they are
+            cleanProfileData[key] = typeof value === 'boolean' ? value : (value === true || value === 'true' || value === 'Yes');
+          }
+          // For number fields, ensure they're numbers
+          else if (key === 'age' || key === 'preferred_age_range_min' || key === 'preferred_age_range_max') {
+            cleanProfileData[key] = typeof value === 'number' ? value : (value === '' ? null : Number(value));
+          }
+          // For array fields, ensure they're arrays
+          else if (key === 'languages' || key === 'core_values') {
+            if (Array.isArray(value)) {
+              cleanProfileData[key] = value;
+            } else if (typeof value === 'string' && value.trim() !== '') {
+              // If it's a string (comma-separated), split it
+              cleanProfileData[key] = value.split(',').map(v => v.trim()).filter(v => v);
+            } else {
+              // Empty array is valid - user might want to clear the field
+              cleanProfileData[key] = [];
+            }
+          }
+          // For string fields, allow empty strings (they might want to clear a field)
+          else {
+            cleanProfileData[key] = value;
+          }
+        }
+      }
+      
       const updateData = {
-        ...profileUpdateData,
+        ...cleanProfileData,
         photos: photosData,
       };
+
+      console.log('Update data being sent:', { 
+        profileFields: Object.keys(cleanProfileData),
+        profileDataSample: Object.fromEntries(Object.entries(cleanProfileData).slice(0, 5)),
+        photosCount: photosData.length 
+      });
+
+      console.log('Sending update request with data keys:', Object.keys(updateData));
+      console.log('Update data sample (first 10 fields):', Object.fromEntries(Object.entries(updateData).slice(0, 10)));
 
       const result = await authService.updateProfile(updateData);
 
@@ -295,29 +443,28 @@ export default function ProfileView() {
         if (result.profile.photos && result.profile.photos.length > 0) {
           const existingPhotoUrls = result.profile.photos
             .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-            .map((photo: any) => {
-              if (photo.url) return photo.url;
-              if (photo.storage_key) {
-                const bucket = photo.bucket || 'uploads';
-                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-                if (supabaseUrl) {
-                  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${photo.storage_key}`;
-                }
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-                return `${apiUrl}/uploads/${photo.storage_key}`;
-              }
-              return '';
-            });
-          setPhotoPreviews(existingPhotoUrls.filter((url: string) => url));
+            .map((photo: any) => getImageUrl(photo))
+            .filter((url: string | null): url is string => url !== null);
+          setPhotoPreviews(existingPhotoUrls);
         } else {
           setPhotoPreviews([]);
         }
+        alert('Profile updated successfully!');
       } else {
-        alert(result.message || 'Failed to update profile');
+        console.error('Update failed:', result);
+        const errorMsg = result.message || 'Failed to update profile. Please check the console for details.';
+        alert(errorMsg);
       }
     } catch (err: any) {
       console.error('Save error:', err);
-      alert(err.message || 'Failed to update profile');
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        stack: err.stack,
+      });
+      const errorMsg = err.response?.data?.message || err.message || 'Unknown error occurred';
+      alert(`Failed to update profile: ${errorMsg}\n\nPlease check the browser console and backend logs for more details.`);
     } finally {
       setSaving(false);
     }
@@ -335,6 +482,19 @@ export default function ProfileView() {
     return value.join(", ");
   };
 
+  // Field options mapping (matching onboarding question structure)
+  const fieldOptions: Record<string, string[]> = {
+    gender: ['Male', 'Female'],
+    living_situation: ['Alone', 'With family', 'With roommates'],
+    education: ['High school', 'Some college', 'University', 'Graduate school', 'Other'],
+    ideal_marriage_timeline: ['1 year', '1–2 years', 'Open-ended'],
+    faith_importance: ['Very important', 'Somewhat', 'Not important'],
+    gender_roles_in_marriage: ['Traditional roles', 'Equal partnership', 'Flexible'],
+    conflict_handling: ['Talk it out', 'Take space', 'Seek mediation'],
+    love_language: ['Words of affirmation', 'Quality time', 'Gifts', 'Acts of service', 'Touch'],
+    weekend_activities: ['Socializing', 'Outdoors', 'Relaxing at home', 'Cultural events'],
+  };
+
   // Helper component to render editable field
   const EditableField = ({ 
     label, 
@@ -343,6 +503,7 @@ export default function ProfileView() {
     type = 'text',
     options,
     isArray = false,
+    useRadioButtons = false,
   }: {
     label: string;
     field: string;
@@ -350,8 +511,51 @@ export default function ProfileView() {
     type?: 'text' | 'number' | 'date' | 'select' | 'textarea' | 'boolean';
     options?: string[];
     isArray?: boolean;
+    useRadioButtons?: boolean;
   }) => {
     if (isEditing) {
+      // Use radio buttons if options are available and useRadioButtons is true
+      const fieldOptionsList = options || fieldOptions[field];
+      if (useRadioButtons && fieldOptionsList && fieldOptionsList.length > 0) {
+        // Normalize value for comparison (trim whitespace, handle case sensitivity)
+        const normalizedValue = value ? String(value).trim() : '';
+        return (
+          <div className="flex flex-col gap-2 md:col-span-2">
+            <label className="text-sm text-[#6B5B5B] font-medium">{label}</label>
+            <div className="flex flex-col gap-2">
+              {fieldOptionsList.map((opt) => {
+                const normalizedOpt = String(opt).trim();
+                const isChecked = normalizedValue === normalizedOpt;
+                return (
+                  <label
+                    key={opt}
+                    onClick={() => handleFieldChange(field, opt)}
+                    className={`
+                      w-full md:w-3/4 border rounded-md py-2 px-3
+                      flex items-center gap-3 cursor-pointer
+                      hover:brightness-105 transition
+                      ${isChecked 
+                        ? 'bg-[#F6E7EA] border-[#702C3E] border-2' 
+                        : 'bg-[#F6E7EA] border-[#E4D6D6]'}
+                    `}
+                  >
+                    <input
+                      type="radio"
+                      name={field}
+                      checked={isChecked}
+                      onChange={() => handleFieldChange(field, opt)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 accent-[#702C3E]"
+                    />
+                    <span className="text-sm text-[#491A26] ml-3">{opt}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+      
       if (type === 'textarea') {
         return (
           <div className="flex flex-col gap-1 md:col-span-2">
@@ -365,36 +569,58 @@ export default function ProfileView() {
           </div>
         );
       }
-      if (type === 'select' && options) {
+      if (type === 'select' && (options || fieldOptionsList)) {
+        const selectOptions = options || fieldOptionsList || [];
+        // Normalize value for comparison
+        const normalizedValue = value ? String(value).trim() : '';
         return (
           <div className="flex flex-col gap-1">
             <label className="text-sm text-[#6B5B5B] font-medium">{label}</label>
             <select
-              value={value || ''}
+              value={normalizedValue}
               onChange={(e) => handleFieldChange(field, e.target.value)}
               className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E] bg-white"
             >
               <option value="">Select...</option>
-              {options.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
+              {selectOptions.map((opt) => {
+                const normalizedOpt = String(opt).trim();
+                return (
+                  <option key={opt} value={opt} selected={normalizedValue === normalizedOpt}>
+                    {opt}
+                  </option>
+                );
+              })}
             </select>
           </div>
         );
       }
       if (type === 'boolean') {
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2 md:col-span-2">
             <label className="text-sm text-[#6B5B5B] font-medium">{label}</label>
-            <select
-              value={value === true ? 'Yes' : value === false ? 'No' : ''}
-              onChange={(e) => handleFieldChange(field, e.target.value === 'Yes')}
-              className="px-3 py-2 border border-[#E4D6D6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#702C3E] text-base text-[#2F2E2E] bg-white"
-            >
-              <option value="">Not specified</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
+            <div className="flex flex-col gap-2">
+              {['Yes', 'No'].map((opt) => (
+                <label
+                  key={opt}
+                  onClick={() => handleFieldChange(field, opt === 'Yes')}
+                  className="
+                    w-full md:w-3/4 bg-[#F6E7EA] border border-[#E4D6D6]
+                    rounded-md py-2 px-3
+                    flex items-center gap-3 cursor-pointer
+                    hover:brightness-105 transition
+                  "
+                >
+                  <input
+                    type="radio"
+                    name={field}
+                    checked={(value === true && opt === 'Yes') || (value === false && opt === 'No')}
+                    onChange={() => handleFieldChange(field, opt === 'Yes')}
+                    className="w-4 h-4 accent-[#702C3E]"
+                  />
+                  <span className="text-sm text-[#491A26] ml-3">{opt}</span>
+                </label>
+              ))}
+            </div>
           </div>
         );
       }
@@ -410,11 +636,16 @@ export default function ProfileView() {
         </div>
       );
     }
+    // Display value - handle empty strings, null, undefined
+    const displayValue = (value !== null && value !== undefined && value !== '') 
+      ? String(value) 
+      : 'Not specified';
+    
     return (
       <div className="flex flex-col gap-1">
         <span className="text-sm text-[#6B5B5B] font-medium">{label}</span>
         <span className="text-base text-[#2F2E2E] font-semibold">
-          {value !== null && value !== undefined ? String(value) : 'Not specified'}
+          {displayValue}
         </span>
       </div>
     );
@@ -423,108 +654,12 @@ export default function ProfileView() {
   // Get display name or fallback
   const displayName = profileData?.display_name || "User";
 
-  // Get photos - handle both storage_key and url formats
+  // Get photos - handle both storage_key and url formats using utility function
   const profilePhotos = profileData?.photos || [];
   const photoUrls = profilePhotos
     .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map((photo) => {
-      // If URL is already provided and is a valid URL, use it
-      if (photo.url) {
-        // Check if it's already a full URL
-        if (photo.url.startsWith('http://') || photo.url.startsWith('https://')) {
-          return photo.url;
-        }
-        // If it's a relative path, might need to construct full URL
-      }
-      
-      // If storage_key is provided, construct Supabase public URL
-      if (photo.storage_key) {
-        const bucket = photo.bucket || 'uploads';
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        
-        // Check if storage_key is already a full URL
-        if (photo.storage_key.startsWith('http://') || photo.storage_key.startsWith('https://')) {
-          return photo.storage_key;
-        }
-        
-        // If we have Supabase URL, construct the public storage URL
-        if (supabaseUrl) {
-          // Ensure storage_key doesn't start with / and bucket is included in path
-          const cleanStorageKey = photo.storage_key.startsWith('/') 
-            ? photo.storage_key.slice(1) 
-            : photo.storage_key;
-          
-          // Construct Supabase Storage public URL
-          // Format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[key]
-          try {
-            const url = `${supabaseUrl}/storage/v1/object/public/${bucket}/${cleanStorageKey}`;
-            // Validate URL
-            new URL(url);
-            return url;
-          } catch (e) {
-            console.warn('Failed to construct Supabase URL:', e);
-          }
-        }
-        
-        // Fallback: if no Supabase URL, try to use API endpoint
-        // This assumes photos might be served from the backend
-        let apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        
-        // If no API URL is set, try to construct from current origin (for development)
-        if (!apiUrl && typeof window !== 'undefined') {
-          // Try to get API URL from current origin
-          const origin = window.location.origin;
-          // Replace port if it's 3000 (Next.js) with 3001 (backend)
-          apiUrl = origin.replace(/:\d+$/, ':3001');
-        }
-        
-        // Final fallback
-        if (!apiUrl) {
-          apiUrl = 'http://localhost:3001';
-        }
-        
-        try {
-          // Remove trailing slash if present
-          const cleanApiUrl = apiUrl.replace(/\/$/, '');
-          // Ensure storage_key doesn't have leading slash
-          const cleanStorageKey = photo.storage_key.startsWith('/') 
-            ? photo.storage_key.slice(1) 
-            : photo.storage_key;
-          const url = `${cleanApiUrl}/uploads/${cleanStorageKey}`;
-          // Validate URL by creating URL object
-          new URL(url);
-          return url;
-        } catch (e) {
-          console.warn('Failed to construct API URL:', e, 'storage_key:', photo.storage_key, 'apiUrl:', apiUrl);
-        }
-        
-        // Last resort: return null (will be filtered out)
-        return null;
-      }
-      
-      return null;
-    })
-    .filter((url): url is string => {
-      // Filter out null/undefined and validate URL format
-      if (!url || typeof url !== 'string') return false;
-      
-      // Check if it's a valid URL format
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        try {
-          new URL(url);
-          return true;
-        } catch {
-          return false;
-        }
-      }
-      
-      // If it's a relative path starting with /, it's valid for Next.js
-      if (url.startsWith('/')) {
-        return true;
-      }
-      
-      return false;
-    });
+    .map((photo) => getImageUrl(photo))
+    .filter((url): url is string => url !== null);
 
   if (loading) {
     return (
@@ -627,9 +762,9 @@ export default function ProfileView() {
         <div className="w-full mb-8">
           <h3 className="text-xl font-semibold text-[#702C3E] mb-4">Photos</h3>
           {isEditing ? (
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-w-2xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 max-w-2xl mx-auto px-2 md:px-0">
               {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-dashed border-[#E4D6D6] bg-white/50">
+                <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-dashed border-[#E4D6D6] bg-white/50 hover:border-[#702C3E] transition-colors">
                   {photoPreviews[index] ? (
                     <>
                       <img
@@ -639,13 +774,14 @@ export default function ProfileView() {
                       />
                       <button
                         onClick={() => handlePhotoRemove(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full w-7 h-7 md:w-6 md:h-6 flex items-center justify-center text-base md:text-xs hover:bg-red-600 transition-colors shadow-md"
+                        aria-label="Remove photo"
                       >
                         ×
                       </button>
                     </>
                   ) : (
-                    <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-[#E4D6D6]/30 transition">
+                    <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-[#E4D6D6]/30 active:bg-[#E4D6D6]/50 transition-colors">
                       <input
                         type="file"
                         accept="image/*"
@@ -653,7 +789,7 @@ export default function ProfileView() {
                         onChange={(e) => handlePhotoChange(e, index)}
                         ref={index === 0 ? fileInputRef : undefined}
                       />
-                      <span className="text-[#702C3E] text-2xl">+</span>
+                      <span className="text-[#702C3E] text-3xl md:text-2xl font-light">+</span>
                     </label>
                   )}
                 </div>
@@ -661,11 +797,11 @@ export default function ProfileView() {
             </div>
           ) : (
             photoUrls.length > 0 && (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-w-2xl mx-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 max-w-2xl mx-auto px-2 md:px-0">
                 {photoUrls.map((photoUrl, index) => {
-                  const isLocalhost = photoUrl.includes('localhost') || photoUrl.includes('127.0.0.1');
+                  const isLocalhost = isLocalImage(photoUrl);
                   return (
-                    <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border border-[#E4D6D6] shadow-sm hover:shadow-md transition-shadow">
+                    <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border border-[#E4D6D6] shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
                       {isLocalhost ? (
                         <img
                           src={photoUrl}
@@ -710,6 +846,12 @@ export default function ProfileView() {
             <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <EditableField
+                label="Full Name"
+                field="full_name"
+                value={isEditing ? editData?.full_name : profileData?.full_name}
+                type="text"
+              />
+              <EditableField
                 label="Age"
                 field="age"
                 value={isEditing ? editData?.age : profileData?.age}
@@ -726,7 +868,8 @@ export default function ProfileView() {
                 field="gender"
                 value={isEditing ? editData?.gender : profileData?.gender}
                 type="select"
-                options={['Male', 'Female', 'Other']}
+                options={['Male', 'Female']}
+                useRadioButtons={true}
               />
               <EditableField
                 label="Current Location"
@@ -770,7 +913,8 @@ export default function ProfileView() {
                 label="Education"
                 field="education"
                 value={isEditing ? editData?.education : profileData?.education}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
               <EditableField
                 label="Occupation"
@@ -808,7 +952,7 @@ export default function ProfileView() {
                 field="living_situation"
                 value={isEditing ? editData?.living_situation : profileData?.living_situation}
                 type="select"
-                options={['Alone', 'With family', 'With roommates', 'Other']}
+                useRadioButtons={true}
               />
             </div>
           </div>
@@ -858,7 +1002,8 @@ export default function ProfileView() {
                 label="Ideal Marriage Timeline"
                 field="ideal_marriage_timeline"
                 value={isEditing ? editData?.ideal_marriage_timeline : profileData?.ideal_marriage_timeline}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
               <EditableField
                 label="Cultural Preference"
@@ -877,7 +1022,8 @@ export default function ProfileView() {
                 label="Weekend Activities"
                 field="weekend_activities"
                 value={isEditing ? editData?.weekend_activities : profileData?.weekend_activities}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
               {isEditing ? (
                 <div className="flex flex-col gap-1">
@@ -902,13 +1048,15 @@ export default function ProfileView() {
                 label="Conflict Handling"
                 field="conflict_handling"
                 value={isEditing ? editData?.conflict_handling : profileData?.conflict_handling}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
               <EditableField
                 label="Love Language"
                 field="love_language"
                 value={isEditing ? editData?.love_language : profileData?.love_language}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
             </div>
           </div>
@@ -921,13 +1069,15 @@ export default function ProfileView() {
                 label="Faith Importance"
                 field="faith_importance"
                 value={isEditing ? editData?.faith_importance : profileData?.faith_importance}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
               <EditableField
                 label="Gender Roles in Marriage"
                 field="gender_roles_in_marriage"
                 value={isEditing ? editData?.gender_roles_in_marriage : profileData?.gender_roles_in_marriage}
-                type="text"
+                type="select"
+                useRadioButtons={true}
               />
             </div>
           </div>

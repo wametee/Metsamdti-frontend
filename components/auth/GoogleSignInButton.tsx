@@ -46,6 +46,55 @@ export default function GoogleSignInButton({
         throw new Error(result.message || "Google authentication failed");
       }
 
+      // Check if this is a new user (from the response)
+      // The backend returns isNewUser in the response
+      // Use strict check to ensure we catch true values
+      const isNewUser = result.isNewUser === true;
+
+      console.log('[GoogleSignInButton] Google auth result:', { 
+        success: result.success, 
+        isNewUser: result.isNewUser,
+        isNewUserType: typeof result.isNewUser,
+        isNewUserStrict: isNewUser,
+        hasToken: !!result.token,
+        user: result.user 
+      });
+
+      // Store token if we have one
+      if (result.token && typeof window !== "undefined") {
+        localStorage.setItem("auth_token", result.token);
+      }
+
+      // CRITICAL: Check if user needs to complete onboarding
+      // New users OR users without phone MUST go through phone collection and onboarding
+      const hasPhone = result.user?.phone || result.user?.phone_number;
+      
+      if (isNewUser || !hasPhone) {
+        // New user or user without phone - MUST go through phone collection and onboarding
+        console.log('[GoogleSignInButton] User needs onboarding:', { isNewUser, hasPhone });
+        
+        if (isNewUser) {
+          toast.success("Account created! Please add your phone number.", {
+            position: "top-right",
+            autoClose: 2000,
+          });
+        } else {
+          toast.info("Please add your phone number to continue.", {
+            position: "top-right",
+            autoClose: 2000,
+          });
+        }
+        
+        // Don't store token yet - they need to complete onboarding first
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth_token");
+        }
+        router.push("/google-phone");
+        return; // Important: return early to prevent any other redirects
+      }
+
+      // Existing user with phone - they can go to perfect-match
+      console.log('[GoogleSignInButton] Existing user with phone - redirecting to perfect-match');
       toast.success("Successfully signed in with Google!", {
         position: "top-right",
         autoClose: 2000,
@@ -54,7 +103,6 @@ export default function GoogleSignInButton({
       if (onSuccess) {
         onSuccess();
       } else {
-        // Default redirect
         router.push("/perfect-match");
       }
     } catch (error: any) {

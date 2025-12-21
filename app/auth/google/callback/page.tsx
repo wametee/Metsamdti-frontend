@@ -28,20 +28,25 @@ export default function GoogleCallbackPage() {
         localStorage.setItem("auth_token", token);
       }
 
-      toast.success(
-        isNewUser
-          ? "Account created successfully! Welcome!"
-          : "Successfully signed in with Google!",
-        {
+      if (isNewUser) {
+        // New user - redirect to phone collection page
+        toast.success("Account created! Please add your phone number.", {
           position: "top-right",
           autoClose: 2000,
-        }
-      );
-
-      // Redirect to perfect match page
-      setTimeout(() => {
-        router.push("/perfect-match");
-      }, 500);
+        });
+        setTimeout(() => {
+          router.push("/google-phone");
+        }, 500);
+      } else {
+        // Existing user - redirect to perfect match page
+        toast.success("Successfully signed in with Google!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        setTimeout(() => {
+          router.push("/perfect-match");
+        }, 500);
+      }
     } else {
       toast.error("No token received", {
         position: "top-right",

@@ -180,14 +180,14 @@ export default function Login() {
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
+          {/* <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-[#D6C2C2]" />
             <span className="text-xs text-[#6B5B5B]">or</span>
             <div className="flex-1 h-px bg-[#D6C2C2]" />
-          </div>
+          </div> */}
 
           {/* Google Button */}
-          <GoogleSignInButton />
+          {/* <GoogleSignInButton /> */}
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">

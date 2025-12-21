@@ -1,10 +1,22 @@
 import { AxiosInstance, AxiosError } from "axios";
 import { toast } from "react-toastify";
+import { shouldRedirectToLogin } from "../config/routes";
 
 /**
  * Error Interceptor
- * Centralized error handling for all API requests
- * Provides consistent error messages and logging
+ * 
+ * Centralized error handling for all API requests.
+ * Provides consistent error messages, logging, and toast notifications.
+ * 
+ * Responsibilities:
+ * 1. Handle network errors (no response from server)
+ * 2. Skip 401 errors (pass to AuthInterceptor for intelligent handling)
+ * 3. Skip errors marked as silent/expected (from AuthInterceptor)
+ * 4. Handle all other HTTP errors (400, 403, 404, 422, 429, 500, etc.)
+ * 5. Show appropriate toast notifications for user-facing errors
+ * 
+ * Note: This interceptor runs FIRST (registered last = runs first)
+ * It skips 401s so AuthInterceptor can handle them based on route context
  */
 const ErrorInterceptor = (httpClient: AxiosInstance) => {
   httpClient.interceptors.response.use(
@@ -41,17 +53,17 @@ const ErrorInterceptor = (httpClient: AxiosInstance) => {
       const status = error.response.status;
       const data = error.response.data as any;
 
-      // Log error for debugging (always log in development, or if there's useful info)
-      const shouldLog = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_ENVIRONMENT === "dev";
-      if (shouldLog) {
-        console.error("API Error:", {
-          status,
-          url: error.config?.url,
-          baseURL: error.config?.baseURL,
-          method: error.config?.method,
-          data: data || "No error data",
-          fullError: error,
-        });
+      // Skip 401 errors - let auth interceptor handle them
+      // Error interceptor runs FIRST (registered last), auth interceptor runs SECOND
+      // If error is marked as silent/expected, skip all error handling
+      if (status === 401) {
+        // Pass through to auth interceptor - it will handle redirects and marking
+        return Promise.reject(error);
+      }
+      
+      // Skip errors marked as silent/expected (from auth interceptor)
+      if ((error as any).silent || (error as any).isExpected) {
+        return Promise.reject(error);
       }
 
       // Transform error to a consistent format
@@ -72,17 +84,6 @@ const ErrorInterceptor = (httpClient: AxiosInstance) => {
             code: "BAD_REQUEST",
             status,
             data,
-          });
-        case 401:
-          toastMessage = "Unauthorized. Please log in again.";
-          toast.error(toastMessage, {
-            position: "top-right",
-            autoClose: 5000,
-          });
-          return Promise.reject({
-            message: toastMessage,
-            code: "UNAUTHORIZED",
-            status,
           });
         case 403:
           toastMessage = "You don't have permission to perform this action.";
