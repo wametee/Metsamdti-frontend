@@ -9,57 +9,77 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { useMutation } from '@tanstack/react-query';
 import { toast } from "react-toastify";
+import httpClient from '@/lib/httpClient';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function ForgotPassword() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async () => {
       setIsSubmitting(true);
-      setError(null);
 
       // Validation
       if (!email) {
-        throw new Error('Email is required');
+        const errorMsg = 'Email is required';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        throw new Error('Please enter a valid email address');
+        const errorMsg = 'Please enter a valid email address';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
-      // TODO: Call forgot password service when backend is ready
-      // const result = await authService.forgotPassword({ email });
-      // if (!result.success) {
-      //   throw new Error(result.message || 'Failed to send reset email');
-      // }
+      // Call password reset API
+      const response = await httpClient.post('/password-reset/send', { email });
+      
+      if (!response.data.success) {
+        const errorMsg = response.data.message || 'Failed to send reset code';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
+      }
 
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      return { success: true };
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setIsSubmitted(true);
-      toast.success("Password reset link sent to your email!", {
+      toast.success(data.message || "Password reset code sent to your email!", {
         position: "top-right",
         autoClose: 3000,
       });
+      // Redirect to reset password page with email
+      setTimeout(() => {
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+      }, 1500);
     },
     onError: (error: any) => {
-      const errorMessage = error.message || 'An error occurred';
-      setError(errorMessage);
       setIsSubmitting(false);
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      // Show error toast if not already shown
+      if (!error.toastShown) {
+        const errorMessage = error.message || 'An error occurred';
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
     },
   });
 
@@ -68,8 +88,25 @@ export default function ForgotPassword() {
     mutation.mutate();
   };
 
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on forgot password page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center justify-center px-4 py-10">
+      {/* Hidden Google Translate Element */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button
@@ -101,19 +138,12 @@ export default function ForgotPassword() {
         </h2>
 
         {/* Subtitle */}
-        {!isSubmitted ? (
-          <p className="text-sm text-center text-[#6B5B5B] mb-8">
-            Enter your email address and we'll send you a link to reset your password.
-          </p>
-        ) : (
-          <p className="text-sm text-center text-[#6B5B5B] mb-8">
-            Check your email for a password reset link. If you don't see it, check your spam folder.
-          </p>
-        )}
+        <p className="text-sm text-center text-[#6B5B5B] mb-8">
+          Enter your email address and we'll send you a code to reset your password.
+        </p>
 
         {/* Form */}
-        {!isSubmitted ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Email */}
             <div className="relative">
               <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A6A6A]" />
@@ -135,13 +165,6 @@ export default function ForgotPassword() {
               />
             </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -154,7 +177,7 @@ export default function ForgotPassword() {
                 disabled:opacity-50 disabled:cursor-not-allowed
               "
             >
-              {isSubmitting ? 'Sending...' : 'Send Reset Link'} <FiArrowUpRight className="w-4 h-4" />
+              {isSubmitting ? 'Sending...' : 'Send Reset Code'} <FiArrowUpRight className="w-4 h-4" />
             </button>
 
             {/* Back to Login Link */}
@@ -168,41 +191,6 @@ export default function ForgotPassword() {
               </span>
             </p>
           </form>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {/* Success Message */}
-            <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm text-center">
-              Password reset link has been sent to <strong>{email}</strong>
-            </div>
-
-            {/* Back to Login Button */}
-            <button
-              onClick={() => router.push("/login")}
-              className="
-                mt-4 bg-[#702C3E] text-white
-                py-3 rounded-md
-                flex items-center justify-center gap-2
-                hover:bg-[#5E2333] transition
-              "
-            >
-              Back to Login <FiArrowUpRight className="w-4 h-4" />
-            </button>
-
-            {/* Resend Link */}
-            <button
-              onClick={() => {
-                setIsSubmitted(false);
-                setEmail("");
-                setError(null);
-              }}
-              className="
-                text-center text-xs text-[#702C3E] hover:underline
-              "
-            >
-              Didn't receive the email? Try again
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Footer */}

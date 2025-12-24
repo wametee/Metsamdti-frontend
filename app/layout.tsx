@@ -4,7 +4,6 @@ import "./globals.css";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import ApiProvider from "@/components/providers/ApiProvider";
 import ToasterWrapper from "@/components/ui/ToasterWrapper";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Optimize font loading with preload and display swap
 const quicksand = Quicksand({
@@ -40,14 +39,12 @@ export default function RootLayout({
         />
       </head>
       <body className={`${quicksand.className} bg-[#FCF8F8] min-h-screen`}>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
-          <ApiProvider>
-            <LanguageProvider>
-              {children}
-              <ToasterWrapper />
-            </LanguageProvider>
-          </ApiProvider>
-        </GoogleOAuthProvider>
+        <ApiProvider>
+          <LanguageProvider>
+            {children}
+            <ToasterWrapper />
+          </LanguageProvider>
+        </ApiProvider>
       </body>
     </html>
   );

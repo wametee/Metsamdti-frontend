@@ -1,11 +1,23 @@
+"use client";
+
 import Header from '@/components/layout/Header';
 import Image from 'next/image';
 import Footer from '@/components/layout/Footer';
 import Hero from "@/assets/hero.jpg"
-import HowItWorks from "@/assets/howitworks.png"
+import Jebena from "@/assets/Jebena.jpeg"
 import { FiArrowUpRight, GiJourney, GiMeditation, GiLovers, AiFillCaretLeft } from '@/lib/icons';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function Home() {
+  const { isLoaded } = useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on home page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   const questions = [
     'Are you tired of casual dating and ready for something real?',
     'Do you long for security and meaning in your relationships?',
@@ -16,6 +28,8 @@ export default function Home() {
 
   return (
     <>
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+      
       <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#EDD4D3] to-[#FCF8F8]">
 
         <Header />
@@ -108,9 +122,9 @@ export default function Home() {
           <div className="relative flex flex-col md:flex-row md:items-start gap-10">
 
             {/* Left Image */}
-            <div className="relative w-full md:w-[460px] overflow-hidden shadow-lg" style={{ height: '565px', minHeight: '565px' }}>
+            <div className="relative w-full md:w-[460px]   h-[565px] sm:h-[565px] md:h-[565px]">
              <Image
-                src={HowItWorks}
+                src={Jebena}
                 alt="HowItWorks"
                 fill
                 className="object-cover"

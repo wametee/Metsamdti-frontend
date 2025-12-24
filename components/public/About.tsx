@@ -1,12 +1,26 @@
+"use client";
+
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import about from "@/assets/about.jpg";
 import Love from "@/assets/love.jpg";
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function About() {
+  const { isLoaded } = useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on about page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   return (
     <>
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+      
       <section className="relative min-h-screen bg-gradient-to-b from-[#EDD4D3] to-[#FCF8F8] overflow-hidden rounded-bl-[7rem]">
         {/* Background image with curved bottom-left */}
         <div className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden rounded-bl-[7rem]">

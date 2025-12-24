@@ -66,9 +66,11 @@ export function useOnboardingProgress(): ProgressInfo {
     const phaseProgress = calculatePhaseProgress(currentStep);
     const overallProgress = calculateOverallProgress(currentStep);
     const phaseInfo = PHASE_PROGRESS[currentStep.phase] || null;
+    // stepInfo: current is the current step number, total is total steps in phase
+    // Display format will be "current/total" (e.g., "8/15" for step 8 of 15)
     const stepInfo = {
-      current: currentStep.stepNumber,
-      total: currentStep.totalStepsInPhase,
+      current: currentStep.stepNumber,        // Current step number (1, 2, 3, etc.)
+      total: currentStep.totalStepsInPhase,  // Total steps in phase (15 for PROFILE phase)
     };
 
     return {

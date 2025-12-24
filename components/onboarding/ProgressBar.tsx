@@ -66,17 +66,20 @@ export default function ProgressBar({
       // For step-based pages, show step progress within phase
       displayProgress = phaseProgress;
       if (showLabel && stepInfo) {
+        // Display format: current/total (e.g., "8/15" for step 8 of 15)
         displayLabel = `${stepInfo.current}/${stepInfo.total}`;
       }
     }
   } else if (mode === 'phase') {
     displayProgress = phaseInfo?.percentage || 0;
     if (showLabel && phaseInfo) {
+      // Display format: current/total (e.g., "1/3" for phase 1 of 3)
       displayLabel = `${phaseInfo.current}/${phaseInfo.total}`;
     }
   } else if (mode === 'step') {
     displayProgress = phaseProgress;
     if (showLabel && stepInfo) {
+      // Display format: current/total (e.g., "8/15" for step 8 of 15)
       displayLabel = `${stepInfo.current}/${stepInfo.total}`;
     }
   } else {

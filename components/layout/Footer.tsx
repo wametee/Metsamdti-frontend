@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/assets/logo2.png";
-import { FaTwitter, FaInstagram, FaGithub, FaLinkedinIn } from "@/lib/icons";
+import { FaTwitter, FaInstagram, FaGithub, FaLinkedinIn } from "react-icons/fa";
 
 export default function Footer() {
   return (
@@ -21,8 +21,6 @@ export default function Footer() {
                   width={36}
                   height={36}
                   className="object-contain"
-                  loading="lazy"
-                  quality={85}
                 />
               </div>
               <span className="text-sm font-medium text-[#702C3E]">
@@ -71,16 +69,9 @@ export default function Footer() {
             <div>
               <h4 className="font-semibold text-[#702C3E] mb-4">Legal</h4>
               <ul className="space-y-3 text-[#2F2E2E]">
-                <li>
-                  <Link href="/terms-of-service" className="hover:opacity-70">
-                    Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy-policy" className="hover:opacity-70">
-                    Privacy Policy
-                  </Link>
-                </li>
+                <li className="hover:opacity-70 cursor-pointer">Terms of Service</li>
+                <li className="hover:opacity-70 cursor-pointer">Privacy Policy</li>
+                <li className="hover:opacity-70 cursor-pointer">Cookie Policy</li>
               </ul>
             </div>
 

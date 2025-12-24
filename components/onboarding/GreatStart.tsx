@@ -6,13 +6,25 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
-import { PhaseProgressBar } from './ProgressBar';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function GreatStart() {
   const router = useRouter();
 
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on great-start page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   return (
       <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* Top-right language switcher (fixed to top-right across breakpoints) */}
       <div className="absolute top-6 right-6 z-30">
@@ -40,8 +52,8 @@ export default function GreatStart() {
 
       {/* Center Card */}
       <div className="relative z-10 mt-24 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] w-[90%] max-w-[620px] p-10 text-center">
-        {/* Progress Bar - Shows 1/3 */}
-        <PhaseProgressBar className="mb-6" />
+       {/* progress bar this is the first step of the application process  this becomes 1/3  */}
+        <div className="w-10 h-10 rounded-full border border-[#702C3E] mx-auto mb-6" />
 
         <h1 className="text-black text-3xl sm:text-4xl md:text-5xl font-bold font-title mb-4">
           Great Start!

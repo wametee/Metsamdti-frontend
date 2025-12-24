@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { onboardingService } from "@/services";
-import { useOnboardingSession } from "./useOnboardingSession";
+import { useOnboardingUser } from "./useOnboardingUser";
 import { updateOnboardingProgress } from "@/lib/utils/localStorage";
 
 /**
@@ -16,12 +16,12 @@ import { updateOnboardingProgress } from "@/lib/utils/localStorage";
  * 
  * This hook internally uses:
  * - useRouter() - Next.js navigation
- * - useOnboardingSession() - Session management (uses useState, useEffect)
+ * - useOnboardingUser() - User ID management (uses useState, useEffect)
  * - useState() - Local state for isSubmitting and error
  * - useMutation() - React Query mutation (uses useContext internally)
  */
 export function useOnboardingSubmit<T>(
-  submitFn: (data: T, sessionId: string) => Promise<any>,
+  submitFn: (data: T, userId: string) => Promise<any>,
   nextRoute: string
 ) {
   // ============================================================================
@@ -29,14 +29,14 @@ export function useOnboardingSubmit<T>(
   // ============================================================================
   // Hook order must be consistent on every render:
   // 1. useRouter()
-  // 2. useOnboardingSession() (calls useState, useEffect internally)
+  // 2. useOnboardingUser() (calls useState, useEffect internally)
   // 3. useState() for isSubmitting
   // 4. useState() for error
   // 5. useMutation() (calls useContext internally to access QueryClient)
   // ============================================================================
   
   const router = useRouter();
-  const sessionId = useOnboardingSession();
+  const userId = useOnboardingUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,8 +48,13 @@ export function useOnboardingSubmit<T>(
       setIsSubmitting(true);
       setError(null);
       
+      if (!userId) {
+        setIsSubmitting(false);
+        throw new Error("User ID not available. Please refresh the page.");
+      }
+      
       try {
-        const result = await submitFn(data, sessionId);
+        const result = await submitFn(data, userId);
         
         if (!result.success) {
           throw new Error(result.message || "Failed to submit");

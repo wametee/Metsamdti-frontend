@@ -8,10 +8,21 @@ import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { PhaseProgressBar } from '@/components/onboarding/ProgressBar';
 import { authService } from '@/services';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function MatchTime() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState<string>("");
+
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on match-time page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -51,6 +62,8 @@ export default function MatchTime() {
 
   return (
     <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* Top-right language switcher (fixed to top-right across breakpoints) */}
       <div className="absolute top-6 right-6 z-30">

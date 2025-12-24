@@ -2,41 +2,38 @@ import { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 /**
  * Captcha Interceptor
- * Adds captcha token to requests that require it
- * Can be extended for reCAPTCHA or other captcha services
+ * Placeholder for captcha validation logic
+ * Currently a no-op interceptor that can be extended if captcha is needed
+ * 
+ * Responsibilities (if implemented):
+ * - Validate captcha tokens before sending requests
+ * - Handle captcha errors
+ * - Refresh captcha tokens when needed
  */
-const CaptchaInterceptor = (httpClient: AxiosInstance) => {
+function CaptchaInterceptor(httpClient: AxiosInstance) {
+  // Request interceptor: Add captcha token if needed
   httpClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      // Only add captcha for specific endpoints (e.g., signup, login)
-      const captchaEndpoints = ["/auth/signup", "/auth/login"];
-      const requiresCaptcha = captchaEndpoints.some((endpoint) =>
-        config.url?.includes(endpoint)
-      );
-
-      if (requiresCaptcha && typeof window !== "undefined") {
-        const captchaToken = localStorage.getItem("captcha_token");
-        
-        if (captchaToken && config.headers) {
-          config.headers["X-Captcha-Token"] = captchaToken;
-        }
-      }
-
+      // Captcha logic can be added here if needed in the future
+      // For now, this is a no-op to maintain the interceptor structure
       return config;
     },
     (error) => {
       return Promise.reject(error);
     }
   );
-};
+
+  // Response interceptor: Handle captcha errors if needed
+  httpClient.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      // Captcha error handling can be added here if needed
+      return Promise.reject(error);
+    }
+  );
+}
 
 export default CaptchaInterceptor;
-
-
-
-
-
-
-
-
 

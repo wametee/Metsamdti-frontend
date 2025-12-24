@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -9,80 +9,65 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 import { StepProgressBar } from './ProgressBar';
-import { validateRequired, showValidationError } from '@/lib/utils/validation';
-import { useOnboardingStepValidation } from '@/hooks/useOnboardingStepValidation';
 
 export default function BackgroundSeriesThree() {
   const router = useRouter();
-  const { isValidating, isValid } = useOnboardingStepValidation();
   const [education, setEducation] = useState("");
   const [occupation, setOccupation] = useState("");
 
-  // Use submit hook - MUST be called before any conditional returns
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on background-series-three page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Load saved data
+  useEffect(() => {
+    const saved = getOnboardingData();
+    if (saved) {
+      setEducation(saved.education || '');
+      setOccupation(saved.occupation || '');
+    }
+  }, []);
+
+  // Use submit hook
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { education: string; occupation: string }
   >(
-    (data) => onboardingService.submitBackgroundSeriesThree(data, ''),
+    (data, userId) => onboardingService.submitBackgroundSeriesThree(data, userId),
     '/onboarding/background-series-four'
   );
 
-  // Load saved data - only once on mount
-  const dataLoadedRef = useRef(false);
-  useEffect(() => {
-    if (dataLoadedRef.current) return;
-    
-    const saved = getOnboardingData();
-    if (saved) {
-      // Only set values if they're not already set (to avoid overwriting user input)
-      if (!education && saved.education) {
-        setEducation(saved.education);
-      }
-      if (!occupation && saved.occupation) {
-        setOccupation(saved.occupation);
-      }
-    }
-    dataLoadedRef.current = true;
-  }, []);
-
-  // Show loading state while validating
-  if (isValidating) {
-    return (
-      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
-        <div className="w-full max-w-3xl md:max-w-4xl lg:max-w-1xl bg-[#EDD4D3] border-2 border-white rounded-2xl py-10 px-6 md:px-20 shadow-md">
-          <p className="text-center text-[#702C3E]">Loading...</p>
-        </div>
-      </section>
-    );
-  }
-
-  // Don't render if validation failed (redirect will happen)
-  if (!isValid) {
-    return null;
-  }
-
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const educationValidation = validateRequired(education, 'education level');
-    if (!educationValidation.isValid) {
-      showValidationError('Please select your education level. This helps us understand your background!');
+    if (!education) {
+      alert('Please select your education level');
       return;
     }
-
-    const occupationValidation = validateRequired(occupation, 'occupation');
-    if (!occupationValidation.isValid) {
-      showValidationError('Please tell us about your occupation. We\'d love to know what you do!');
+    if (!occupation.trim()) {
+      alert('Please tell us your occupation');
       return;
     }
-
     handleSubmit({ education, occupation }, e);
   };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
   pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button

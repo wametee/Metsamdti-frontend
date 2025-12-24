@@ -1,10 +1,13 @@
 // components/Header.tsx
 "use client";
 import { useState, useEffect } from "react";
-import { FaArrowRightLong, GiHamburgerMenu, MdCancel } from '@/lib/icons';
+import { FaArrowRightLong } from "react-icons/fa6";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { MdCancel } from "react-icons/md";
 import logo from '@/assets/logo2.png';
 import Image from 'next/image';
 import Link from 'next/link';
+import GoogleTranslateToggle from '@/components/layout/GoogleTranslateToggle';
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -29,15 +32,7 @@ export default function Header() {
           <div className="col-start-1 flex items-center">
             <div className="flex items-center gap-3">
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                <Image 
-                  src={logo} 
-                  alt="Metsamdti" 
-                  width={80} 
-                  height={80} 
-                  className="object-contain"
-                  priority
-                  quality={90}
-                />
+                <Image src={logo} alt="Metsamdti" width={80} height={80} className="object-contain" />
               </div>
             </div>
           </div>
@@ -52,6 +47,11 @@ export default function Header() {
 
           {/* Right: actions */}
           <div className="col-start-3 flex justify-end items-center gap-3">
+            {/* Language Toggle - visible on all screen sizes */}
+            <div className="flex items-center">
+              <GoogleTranslateToggle />
+            </div>
+
             {/* Get Started visible on md+ */}
             <div className="hidden md:block">
               <Link href="/onboarding/welcome" aria-label="Get Started">
@@ -87,6 +87,15 @@ export default function Header() {
         <nav className="flex flex-col p-4 gap-4">
           <Link href="/" className="text-gray-700 hover:text-[#702C3E] font-medium transition-colors">Home</Link>
           <Link href="/about" className="text-gray-700 hover:text-[#702C3E] font-medium transition-colors">About Us</Link>
+          
+          {/* Language Toggle in Mobile Menu */}
+          <div className="pt-2 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600 font-medium">Language</span>
+            </div>
+            <GoogleTranslateToggle />
+          </div>
+          
           <Link href="/onboarding/welcome" aria-label="Get Started">
             <button className="flex items-center gap-2 bg-[#702C3E] text-white px-4 py-2 rounded-sm font-medium group">
               Get Started

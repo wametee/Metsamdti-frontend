@@ -9,15 +9,17 @@ import { FiEye, FiEyeOff } from '@/lib/icons';
 import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
-import { useOnboardingSession } from '@/hooks/useOnboardingSession';
+import { useOnboardingUser } from '@/hooks/useOnboardingUser';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from "react-toastify";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { validateEmail, validatePassword, showValidationError, validationMessages } from '@/lib/utils/validation';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
+import EmailVerificationModal from '@/components/auth/EmailVerificationModal';
 
 export default function Signup() {
   const router = useRouter();
-  const sessionId = useOnboardingSession();
+  const userId = useOnboardingUser();
 
   const [email, setEmail] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1"); // Default to US
@@ -26,8 +28,14 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [pendingSignupData, setPendingSignupData] = useState<{
+    email: string;
+    password: string;
+    phone: string;
+    phone_country_code: string;
+  } | null>(null);
 
   // Comprehensive list of all countries with flags and codes
   const countryCodes = [
@@ -240,60 +248,98 @@ export default function Signup() {
     return a.country.localeCompare(b.country);
   });
 
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on signup page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (verificationCode?: string) => {
       setIsSubmitting(true);
-      setError(null);
 
       // Validate email
       const emailValidation = validateEmail(email);
       if (!emailValidation.isValid) {
-        showValidationError(emailValidation.message!);
-        throw new Error(emailValidation.message!);
+        const errorMsg = emailValidation.message!;
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       // Validate password
       const passwordValidation = validatePassword(password);
       if (!passwordValidation.isValid) {
-        showValidationError(passwordValidation.message!);
-        throw new Error(passwordValidation.message!);
+        const errorMsg = passwordValidation.message!;
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       // Validate password match
       if (password !== confirmPassword) {
-        showValidationError(validationMessages.password.match);
-        throw new Error(validationMessages.password.match);
+        const errorMsg = validationMessages.password.match;
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       // Validate phone number (required)
       if (!phoneNumber.trim()) {
-        showValidationError('Phone number is required');
-        throw new Error('Phone number is required');
+        const errorMsg = 'Phone number is required';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       // Validate phone number format (should contain only digits)
       const phoneDigits = phoneNumber.trim().replace(/\s+/g, '');
       if (!/^\d+$/.test(phoneDigits) || phoneDigits.length < 6) {
-        showValidationError('Please enter a valid phone number');
-        throw new Error('Please enter a valid phone number');
+        const errorMsg = 'Please enter a valid phone number';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       const fullPhoneNumber = `${phoneCountryCode}${phoneDigits}`;
 
       // Submit complete application with all onboarding data
+      if (!userId) {
+        throw new Error('User ID not available. Please refresh the page.');
+      }
+      
       const result = await onboardingService.completeApplication(
         { 
           email, 
           password,
           phone: fullPhoneNumber,
           phone_country_code: phoneCountryCode,
-          phone_number: phoneNumber.trim()
+          verificationCode, // Include verification code if provided
         },
-        sessionId || ''
+        userId
       );
 
       if (!result.success) {
-        throw new Error(result.message || 'Failed to complete application');
+        const errorMsg = result.message || 'Failed to complete application';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       return result;
@@ -304,6 +350,8 @@ export default function Signup() {
         position: "top-right",
         autoClose: 2000,
       });
+      // Close verification modal if open
+      setShowVerificationModal(false);
       // Redirect to login page after successful signup
       setTimeout(() => {
         router.push('/login');
@@ -311,19 +359,91 @@ export default function Signup() {
     },
     onError: (error: any) => {
       const errorMessage = error.message || 'An error occurred';
-      setError(errorMessage);
+      
+      // If error is EMAIL_VERIFICATION_REQUIRED, show verification modal
+      if (errorMessage === 'EMAIL_VERIFICATION_REQUIRED' || error.response?.data?.error === 'EMAIL_VERIFICATION_REQUIRED') {
+        setPendingSignupData({
+          email,
+          password,
+          phone: `${phoneCountryCode}${phoneNumber.trim().replace(/\s+/g, '')}`,
+          phone_country_code: phoneCountryCode,
+        });
+        setShowVerificationModal(true);
+        setIsSubmitting(false);
+        return;
+      }
+      
       setIsSubmitting(false);
-      // Error toast is already shown by the error interceptor
+      // Show error toast if not already shown
+      if (!error.toastShown) {
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate();
+    
+    // Validate all fields first
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      showValidationError(emailValidation.message!);
+      return;
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      showValidationError(passwordValidation.message!);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showValidationError(validationMessages.password.match);
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      showValidationError('Phone number is required');
+      return;
+    }
+
+    const phoneDigits = phoneNumber.trim().replace(/\s+/g, '');
+    if (!/^\d+$/.test(phoneDigits) || phoneDigits.length < 6) {
+      showValidationError('Please enter a valid phone number');
+      return;
+    }
+
+    // Store signup data and show verification modal
+    const fullPhoneNumber = `${phoneCountryCode}${phoneDigits}`;
+    setPendingSignupData({
+      email,
+      password,
+      phone: fullPhoneNumber,
+      phone_country_code: phoneCountryCode,
+    });
+    setShowVerificationModal(true);
+  };
+
+  const handleVerificationSuccess = async () => {
+    // After verification, complete the signup
+    // The email is now verified in the backend, so completeApplication will succeed
+    if (pendingSignupData && userId) {
+      mutation.mutate(); // This will now succeed since email is verified
+    }
   };
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button
@@ -501,13 +621,6 @@ export default function Signup() {
             </button>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mt-2 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
           {/* Sign Up Button */}
           <button
             type="submit"
@@ -522,16 +635,6 @@ export default function Signup() {
           >
             {isSubmitting ? 'Creating Account...' : 'Sign Up'} <FiArrowUpRight className="w-4 h-4" />
           </button>
-
-          {/* Divider */}
-          {/* <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-[#D6C2C2]" />
-            <span className="text-xs text-[#6B5B5B]">or</span>
-            <div className="flex-1 h-px bg-[#D6C2C2]" />
-          </div> */}
-
-          {/* Google Button */}
-          {/* <GoogleSignInButton /> */}
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">
@@ -550,6 +653,20 @@ export default function Signup() {
       <p className="text-center text-xs text-[#6B5B5B] mt-6 max-w-xs">
         By continuing, you agree to our Terms of Service and Privacy Policy.
       </p>
+
+      {/* Email Verification Modal */}
+      {showVerificationModal && userId && (
+        <EmailVerificationModal
+          isOpen={showVerificationModal}
+          onClose={() => {
+            setShowVerificationModal(false);
+            setPendingSignupData(null);
+          }}
+          email={email}
+          userId={userId}
+          onVerificationSuccess={handleVerificationSuccess}
+        />
+      )}
     </section>
   );
 }

@@ -16,14 +16,14 @@ export default function ApiProvider({ children }: { children: React.ReactNode })
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Stale time: data is considered fresh for 5 minutes (0 in dev for instant updates)
-            staleTime: process.env.NODE_ENV === "development" ? 0 : 1000 * 60 * 5,
-            // Cache time: data stays in cache for 10 minutes after unused (shorter in dev)
-            gcTime: process.env.NODE_ENV === "development" ? 1000 * 60 : 1000 * 60 * 10,
+            // Stale time: data is considered fresh for 5 minutes
+            staleTime: 1000 * 60 * 5,
+            // Cache time: data stays in cache for 10 minutes after unused
+            gcTime: 1000 * 60 * 10,
             // Retry failed requests 3 times with exponential backoff
             retry: 3,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            // Refetch on window focus in production only
+            // Refetch on window focus in production
             refetchOnWindowFocus: process.env.NODE_ENV === "production",
             // Refetch on reconnect
             refetchOnReconnect: true,

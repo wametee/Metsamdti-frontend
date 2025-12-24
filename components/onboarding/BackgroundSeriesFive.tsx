@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -9,101 +9,83 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 import { StepProgressBar } from './ProgressBar';
-import { showValidationError, validationMessages } from '@/lib/utils/validation';
 
 export default function BackgroundSeriesFive() {
   const router = useRouter();
-  const [openToPartnerWithChildren, setOpenToPartnerWithChildren] = useState<"Yes" | "No" | "Depends" | null>(null);
+  const [openToPartnerWithChildren, setOpenToPartnerWithChildren] = useState<boolean | null>(null);
   const [idealMarriageTimeline, setIdealMarriageTimeline] = useState("");
   const [minAge, setMinAge] = useState("");
   const [maxAge, setMaxAge] = useState("");
 
-  // Load saved data - only once on mount
-  const dataLoadedRef = useRef(false);
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on background-series-five page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Load saved data
   useEffect(() => {
-    if (dataLoadedRef.current) return;
-    
     const saved = getOnboardingData();
     if (saved) {
-      // Only set values if they're not already set (to avoid overwriting user input)
-      if (openToPartnerWithChildren === null && saved.openToPartnerWithChildren !== undefined) {
-        // Convert boolean to string representation
-        if (saved.openToPartnerWithChildren === true) {
-          setOpenToPartnerWithChildren("Yes");
-        } else if (saved.openToPartnerWithChildren === false) {
-          setOpenToPartnerWithChildren("No");
-        }
-      }
-      if (!idealMarriageTimeline && saved.idealMarriageTimeline) {
-        setIdealMarriageTimeline(saved.idealMarriageTimeline);
-      }
-      if (!minAge && !maxAge && saved.preferredAgeRange) {
+      if (saved.openToPartnerWithChildren !== undefined) setOpenToPartnerWithChildren(saved.openToPartnerWithChildren);
+      if (saved.idealMarriageTimeline) setIdealMarriageTimeline(saved.idealMarriageTimeline);
+      if (saved.preferredAgeRange) {
         setMinAge(saved.preferredAgeRange.min?.toString() || '');
         setMaxAge(saved.preferredAgeRange.max?.toString() || '');
       }
     }
-    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { openToPartnerWithChildren: boolean; preferredAgeRange: { min: number; max: number }; idealMarriageTimeline: string }
   >(
-    (data) => onboardingService.submitBackgroundSeriesFive(data, ''),
+    (data, userId) => onboardingService.submitBackgroundSeriesFive(data, userId),
     '/onboarding/background-series-six'
   );
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (openToPartnerWithChildren === null) {
-      showValidationError('Please let us know if you\'re open to a partner with children. This helps us find better matches for you!');
+      alert('Please answer if you are open to a partner with children');
       return;
     }
-    
     if (!minAge || !maxAge) {
-      showValidationError('Please enter both minimum and maximum age for your preferred partner. This helps us understand your preferences!');
+      alert('Please enter both minimum and maximum age');
       return;
     }
-    
-    const minAgeNum = parseInt(minAge);
-    const maxAgeNum = parseInt(maxAge);
-    
-    if (isNaN(minAgeNum) || minAgeNum < 22) {
-      showValidationError('The minimum age for a partner must be at least 22 years old. We focus on serious relationships and require users to be 22 or older.');
-      return;
-    }
-    
-    if (isNaN(maxAgeNum) || maxAgeNum < minAgeNum) {
-      showValidationError('The maximum age must be greater than or equal to the minimum age. Please adjust your age range.');
-      return;
-    }
-    
     if (!idealMarriageTimeline) {
-      showValidationError('Please select your ideal timeline for marriage. This helps us understand your relationship goals!');
+      alert('Please select your ideal timeline for marriage');
       return;
     }
-    
-    // Convert string value to boolean for backend compatibility
-    // "Yes" or "Depends" -> true, "No" -> false
-    const openToPartnerBoolean = openToPartnerWithChildren === "Yes" || openToPartnerWithChildren === "Depends";
-    
     handleSubmit({
-      openToPartnerWithChildren: openToPartnerBoolean,
-      preferredAgeRange: { min: minAgeNum, max: maxAgeNum },
+      openToPartnerWithChildren,
+      preferredAgeRange: { min: parseInt(minAge), max: parseInt(maxAge) },
       idealMarriageTimeline,
     }, e);
   };
 
-  const handleChildrenPreference = (value: "Yes" | "No" | "Depends") => {
-    setOpenToPartnerWithChildren(value);
+  const handleChildrenPreference = (value: string) => {
+    setOpenToPartnerWithChildren(value === "Yes" || value === "Depends");
   };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
   pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button
@@ -167,7 +149,7 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={openToPartnerWithChildren === "No"}
+                  checked={openToPartnerWithChildren === false}
                   onChange={() => handleChildrenPreference("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -186,7 +168,7 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={openToPartnerWithChildren === "Yes"}
+                  checked={openToPartnerWithChildren === true}
                   onChange={() => handleChildrenPreference("Yes")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -205,7 +187,7 @@ export default function BackgroundSeriesFive() {
                 <input
                   type="radio"
                   name="children"
-                  checked={openToPartnerWithChildren === "Depends"}
+                  checked={openToPartnerWithChildren === true}
                   onChange={() => handleChildrenPreference("Depends")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -226,32 +208,26 @@ export default function BackgroundSeriesFive() {
             <div className="flex flex-col gap-4">
 
               {/* MIN AGE */}
-              <div className="flex flex-col gap-2 w-full md:w-3/4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="
-                      bg-[#F6E7EA] border border-[#E4D6D6] 
-                      rounded-md py-3 px-4 w-24 text-sm text-[#491A26]
-                    "
-                  >
-                    Min
-                  </div>
-
-                  <input
-                    type="number"
-                    placeholder="e.g., 30"
-                    value={minAge}
-                    onChange={(e) => setMinAge(e.target.value)}
-                    min="22"
-                    className="
-                      flex-1 bg-[#F6E7EA] border border-[#E4D6D6]
-                      rounded-md py-3 px-4 text-sm text-black outline-none
-                    "
-                  />
+              <div className="flex items-center gap-3 w-full md:w-3/4">
+                <div
+                  className="
+                    bg-[#F6E7EA] border border-[#E4D6D6] 
+                    rounded-md py-3 px-4 w-24 text-sm text-[#491A26]
+                  "
+                >
+                  Min
                 </div>
-                <p className="text-xs text-[#6B5B5B] ml-28">
-                  Minimum age is 22 years old
-                </p>
+
+                <input
+                  type="number"
+                  placeholder="e.g., 30"
+                  value={minAge}
+                  onChange={(e) => setMinAge(e.target.value)}
+                  className="
+                    flex-1 bg-[#F6E7EA] border border-[#E4D6D6]
+                    rounded-md py-3 px-4 text-sm text-black outline-none
+                  "
+                />
               </div>
 
               {/* MAX AGE */}
@@ -270,7 +246,6 @@ export default function BackgroundSeriesFive() {
                   placeholder="e.g., 50"
                   value={maxAge}
                   onChange={(e) => setMaxAge(e.target.value)}
-                  min={minAge || "22"}
                   className="
                     flex-1 bg-[#F6E7EA] border border-[#E4D6D6]
                     rounded-md py-3 px-4 text-sm text-black outline-none

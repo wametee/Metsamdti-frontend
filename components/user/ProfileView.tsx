@@ -11,6 +11,7 @@ import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import httpClient from "@/lib/httpClient";
 import { getImageUrl, isLocalImage, extractStorageInfo, extractStorageKeyFromUrl } from "@/lib/utils/imageUrl";
 import { toast } from "react-toastify";
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 interface ProfileData {
   display_name?: string;
@@ -104,6 +105,17 @@ const FIELD_OPTIONS: Record<string, string[]> = {
 
 export default function ProfileView() {
   const router = useRouter();
+  
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on profile page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -792,6 +804,8 @@ export default function ProfileView() {
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
     pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* Header with Profile Name and Language Switcher */}
       <div className="absolute top-6 right-6 flex items-center gap-4 text-[#702C3E] text-sm z-40">

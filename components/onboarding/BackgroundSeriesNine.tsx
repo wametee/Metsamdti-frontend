@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -10,6 +10,8 @@ import OnboardingCompleteModal from "../modal/OnboardingCompleteModal";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 import { StepProgressBar } from './ProgressBar';
 
 export default function BackgroundSeriesNine() {
@@ -19,32 +21,31 @@ export default function BackgroundSeriesNine() {
   const [biggestDealBreaker, setBiggestDealBreaker] = useState("");
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
 
-  // Load saved data - only once on mount
-  const dataLoadedRef = useRef(false);
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on background-series-nine page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Load saved data
   useEffect(() => {
-    if (dataLoadedRef.current) return;
-    
     const saved = getOnboardingData();
     if (saved) {
-      // Only set values if they're not already set (to avoid overwriting user input)
-      if (preferOwnBackground === null && saved.preferOwnBackground !== undefined) {
-        setPreferOwnBackground(saved.preferOwnBackground);
-      }
-      if (!futureFamilyVision && saved.futureFamilyVision) {
-        setFutureFamilyVision(saved.futureFamilyVision);
-      }
-      if (!biggestDealBreaker && saved.biggestDealBreaker) {
-        setBiggestDealBreaker(saved.biggestDealBreaker);
-      }
+      if (saved.preferOwnBackground !== undefined) setPreferOwnBackground(saved.preferOwnBackground);
+      setFutureFamilyVision(saved.futureFamilyVision || '');
+      setBiggestDealBreaker(saved.biggestDealBreaker || '');
     }
-    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { preferOwnBackground: boolean; futureFamilyVision: string; biggestDealBreaker: string }
   >(
-    (data) => onboardingService.submitBackgroundSeriesNine(data, ''),
+    (data, userId) => onboardingService.submitBackgroundSeriesNine(data, userId),
     '/onboarding/great-start'
   );
 
@@ -73,7 +74,13 @@ export default function BackgroundSeriesNine() {
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
     pt-24 pb-10 md:py-20 px-4">
-  
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
   
         {/* Back Button */}
         <button

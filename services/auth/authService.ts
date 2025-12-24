@@ -204,12 +204,11 @@ class AuthService {
   /**
    * Update user's phone number (for Google sign-up users)
    */
-  async updatePhone(phone: string, phoneCountryCode: string, phoneNumber: string): Promise<{ success: boolean; message?: string }> {
+  async updatePhone(phone: string, phoneCountryCode: string): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await httpClient.put("/auth/user", {
         phone,
         phone_country_code: phoneCountryCode,
-        phone_number: phoneNumber,
       });
       return {
         success: true,

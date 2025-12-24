@@ -5,16 +5,26 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import logo from "@/assets/logo2.png";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
-import { PhaseProgressBar } from './ProgressBar';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function ThankYou() {
   const router = useRouter();
 
+  const { isLoaded } = useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on thank you page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   return (
       <section className="min-h-screen w-full bg-[#FCF8F8] relative flex flex-col items-center">
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* Top-right language switcher (fixed to top-right across breakpoints) */}
-      <div className="absolute top-6 right-6 z-30">
+      <div className="absolute top-6 right-6 z-50">
         <LanguageSwitcher />
       </div>
 
@@ -39,8 +49,18 @@ export default function ThankYou() {
 
       {/* Center Card */}
       <div className="relative z-10 mt-24 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] w-[90%] max-w-[620px] p-10 text-center">
-        {/* Progress Bar - Shows 0/3 (Start) */}
-        <PhaseProgressBar className="mb-6" />
+        {/* Small Circle Icon */}
+        {/* Progress Bar */}
+        {/* No progress at the moment but this is here the application process starts, 
+          . Profile phase where user inputs  name, username, age and pictures
+           Personality evaluation and Emotional evaluation stage is the second phase
+           Complete application stage is the third phase where they input signup details and create their account
+           In the BackgroundSeriesone, BackgroundSeriesTwo, BackgroundSeriesThree, BackgroundSeriesFour, BackgroundSeriesFive, BackgroundSeriesSix, BackgroundSeriesSeven, BackgroundSeriesEight, BackgroundSeriesNine, EmotionalSeriesOne, EmotionalSeriesTwo, EmotionalSeriesThree, EmotionalSeriesFour, EmotionalSeriesFive, CompleteApplication, 
+           we have have the progress bar on each of this components do the matchs and update as user completes each i have added the comments ncalled progress bar
+           THe we have the GreatStart.jsx and , completeapplication.jsx which show 1/3, 2/3 then the page after signup and login shows full progress
+           they are the steps that the user goes through to complete their application
+            */}
+        <div className="w-10 h-10 rounded-full border border-[#702C3E] mx-auto mb-6" />
 
         <h1 className="text-black text-3xl sm:text-4xl md:text-5xl font-bold font-title mb-4">
           Thank you for being here

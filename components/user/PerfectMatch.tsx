@@ -4,12 +4,25 @@ import { useRouter } from "next/navigation";
 import { FaHeart } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
 import UserHeader from "./UserHeader";
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function PerfectMatch() {
   const router = useRouter();
 
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on perfect-match page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* TOP BAR */}
       <UserHeader showBackButton={true} backUrl="/match-time" />

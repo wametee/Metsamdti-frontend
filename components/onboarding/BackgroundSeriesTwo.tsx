@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
@@ -9,8 +9,9 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 import { StepProgressBar } from './ProgressBar';
-import { validateRequired, showValidationError, validationMessages } from '@/lib/utils/validation';
 
 export default function BackgroundSeriesTwo() {
   const router = useRouter();
@@ -18,32 +19,31 @@ export default function BackgroundSeriesTwo() {
   const [livingSituation, setLivingSituation] = useState<string>("");
   const [birthLocation, setBirthLocation] = useState<string>("");
 
-  // Load saved data from localStorage - only once on mount
-  const dataLoadedRef = useRef(false);
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on background-series-two page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Load saved data from localStorage
   useEffect(() => {
-    if (dataLoadedRef.current) return;
-    
     const saved = getOnboardingData();
     if (saved) {
-      // Only set values if they're not already set (to avoid overwriting user input)
-      if (!currentLocation && saved.currentLocation) {
-        setCurrentLocation(saved.currentLocation);
-      }
-      if (!livingSituation && saved.livingSituation) {
-        setLivingSituation(saved.livingSituation);
-      }
-      if (!birthLocation && saved.birthLocation) {
-        setBirthLocation(saved.birthLocation);
-      }
+      setCurrentLocation(saved.currentLocation || '');
+      setLivingSituation(saved.livingSituation || '');
+      setBirthLocation(saved.birthLocation || '');
     }
-    dataLoadedRef.current = true;
   }, []);
 
   // Use the reusable submit hook
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { currentLocation: string; livingSituation: string; birthLocation: string }
   >(
-    (data) => onboardingService.submitBackgroundSeriesTwo(data, ''),
+    (data, userId) => onboardingService.submitBackgroundSeriesTwo(data, userId),
     '/onboarding/background-series-three'
   );
 
@@ -51,21 +51,16 @@ export default function BackgroundSeriesTwo() {
     e.preventDefault();
     
     // Validation
-    const locationValidation = validateRequired(currentLocation, 'current location');
-    if (!locationValidation.isValid) {
-      showValidationError('Please tell us where you currently live. This helps us understand your background better!');
+    if (!currentLocation.trim()) {
+      alert('Please enter where you live');
       return;
     }
-
-    const livingSituationValidation = validateRequired(livingSituation, 'living situation');
-    if (!livingSituationValidation.isValid) {
-      showValidationError('Please select your living situation. We\'d love to learn more about your lifestyle!');
+    if (!livingSituation) {
+      alert('Please select your living situation');
       return;
     }
-
-    const birthLocationValidation = validateRequired(birthLocation, 'birth location');
-    if (!birthLocationValidation.isValid) {
-      showValidationError('Please tell us where you were born and raised. This helps us understand your cultural background!');
+    if (!birthLocation.trim()) {
+      alert('Please tell us where you were born and raised');
       return;
     }
 
@@ -79,8 +74,14 @@ export default function BackgroundSeriesTwo() {
   return (
  <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
    pt-24 pb-10 md:py-20 px-4">
- 
- 
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
+
        {/* Back Button */}
        <button
          onClick={() => router.back()}

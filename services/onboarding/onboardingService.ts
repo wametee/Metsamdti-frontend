@@ -103,17 +103,67 @@ export interface CompleteApplicationRequest {
   password: string;
   phone?: string;
   phone_country_code?: string;
-  phone_number?: string;
 }
 
 export interface OnboardingResponse {
   success: boolean;
   message?: string;
   data?: any;
-  sessionId?: string;
+  userId?: string; // Changed from sessionId to userId
 }
 
 class OnboardingService {
+  /**
+   * Initialize onboarding - get or create userId
+   * For authenticated users: returns their existing userId
+   * For anonymous users: creates a new user record and returns userId
+   */
+  async initializeOnboarding(): Promise<{ success: boolean; userId?: string; message?: string }> {
+    try {
+      // Check if user is authenticated
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      
+      if (token) {
+        try {
+          // Try to get current user
+          const response = await httpClient.get('/auth/me');
+          if (response.data?.user?.id) {
+            return {
+              success: true,
+              userId: response.data.user.id,
+            };
+          }
+        } catch (error) {
+          // User not authenticated or error - continue to create anonymous user
+          console.log('User not authenticated, creating anonymous user for onboarding');
+        }
+      }
+
+      // Create anonymous user for onboarding
+      const response = await httpClient.post('/onboarding/initialize', {});
+      
+      // Backend returns { ok: true, userId: string, isNewUser: boolean }
+      if (response.data?.ok && response.data?.userId) {
+        return {
+          success: true,
+          userId: response.data.userId,
+          isNewUser: response.data.isNewUser || false,
+        };
+      }
+      
+      throw new Error('Invalid response from server');
+    } catch (error: any) {
+      console.error('Error initializing onboarding:', error);
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          'Failed to initialize onboarding';
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  }
   /**
    * Check username availability in real-time
    */
@@ -142,8 +192,9 @@ class OnboardingService {
 
   /**
    * Submit basics (display name, full name, age, photos)
+   * Now uses userId instead of sessionId
    */
-  async submitBasics(data: SubmitBasicsRequest, sessionId: string): Promise<OnboardingResponse> {
+  async submitBasics(data: SubmitBasicsRequest, userId: string): Promise<OnboardingResponse> {
     try {
       // Save to localStorage first
       saveOnboardingData({
@@ -159,29 +210,37 @@ class OnboardingService {
         data.photos.forEach((photo) => {
           formData.append("uploaded_file", photo);
         });
+        
+        // Add userId to formData or headers
+        if (userId) {
+          formData.append("userId", userId);
+        }
 
         const uploadResponse = await httpClient.post("/onboarding/upload-photos", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
+            "X-User-ID": userId || "",
           },
         });
 
-        photoUrls = uploadResponse.data.urls || [];
+        photoUrls = uploadResponse.data.urls || uploadResponse.data.fileUrl?.map((f: any) => typeof f === 'string' ? f : f.url) || [];
         saveOnboardingData({ photos: photoUrls });
       }
 
       // Submit to backend
+      // Backend expects userId in the request body
       const response = await httpClient.post(
         "/onboarding/basics",
         {
+          userId: userId, // Backend expects userId in body
           displayName: data.username, // Backend expects displayName
           fullName: data.fullName,
           age: data.age,
-          photos: photoUrls,
+          photos: photoUrls.length > 0 ? photoUrls : undefined,
         },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
@@ -189,7 +248,7 @@ class OnboardingService {
       return {
         success: true,
         data: response.data,
-        sessionId: response.data.sessionId || sessionId,
+        userId: response.data.userId || userId,
       };
     } catch (error: any) {
       return {
@@ -201,23 +260,27 @@ class OnboardingService {
 
   /**
    * Submit background series one
+   * Now uses userId instead of sessionId
    */
   async submitBackgroundSeriesOne(
     data: SubmitBackgroundSeriesOneRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-one",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -228,20 +291,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesTwo(
     data: SubmitBackgroundSeriesTwoRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-two",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -252,20 +318,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesThree(
     data: SubmitBackgroundSeriesThreeRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-three",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -276,20 +345,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesFour(
     data: SubmitBackgroundSeriesFourRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-four",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -300,20 +372,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesFive(
     data: SubmitBackgroundSeriesFiveRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-five",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -324,20 +399,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesSix(
     data: SubmitBackgroundSeriesSixRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-six",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -348,20 +426,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesSeven(
     data: SubmitBackgroundSeriesSevenRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-seven",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -372,20 +453,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesEight(
     data: SubmitBackgroundSeriesEightRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-eight",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -396,20 +480,23 @@ class OnboardingService {
    */
   async submitBackgroundSeriesNine(
     data: SubmitBackgroundSeriesNineRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/background-series-nine",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId, // Also send in header for consistency
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -420,20 +507,23 @@ class OnboardingService {
    */
   async submitEmotionalSeriesOne(
     data: SubmitEmotionalSeriesOneRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/emotional-series-one",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId,
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -444,20 +534,23 @@ class OnboardingService {
    */
   async submitEmotionalSeriesTwo(
     data: SubmitEmotionalSeriesTwoRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/emotional-series-two",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId,
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -468,20 +561,23 @@ class OnboardingService {
    */
   async submitEmotionalSeriesThree(
     data: SubmitEmotionalSeriesThreeRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/emotional-series-three",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId,
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -492,20 +588,23 @@ class OnboardingService {
    */
   async submitEmotionalSeriesFour(
     data: SubmitEmotionalSeriesFourRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/emotional-series-four",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId,
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -516,20 +615,23 @@ class OnboardingService {
    */
   async submitEmotionalSeriesFive(
     data: SubmitEmotionalSeriesFiveRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       saveOnboardingData(data);
       const response = await httpClient.post(
         "/onboarding/emotional-series-five",
-        data,
+        {
+          userId: userId, // Backend expects userId in body
+          ...data,
+        },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId,
           },
         }
       );
-      return { success: true, data: response.data, sessionId: response.data.sessionId || sessionId };
+      return { success: true, data: response.data, userId: response.data.userId || userId };
     } catch (error: any) {
       return { success: false, message: error.message || "Failed to submit data" };
     }
@@ -537,10 +639,11 @@ class OnboardingService {
 
   /**
    * Complete application - submit all data and create account
+   * Now uses userId instead of sessionId
    */
   async completeApplication(
     data: CompleteApplicationRequest,
-    sessionId: string
+    userId: string
   ): Promise<OnboardingResponse> {
     try {
       // Get all saved data from localStorage
@@ -553,26 +656,29 @@ class OnboardingService {
       const response = await httpClient.post(
         "/onboarding/complete",
         {
+          userId: userId, // Backend expects userId in body
           ...allData,
           email: data.email,
           password: data.password, // Backend will handle encryption
           phone: data.phone,
           phone_country_code: data.phone_country_code,
-          phone_number: data.phone_number,
         },
         {
           headers: {
-            "X-Session-ID": sessionId,
+            "X-User-ID": userId,
           },
         }
       );
 
       // Clear localStorage after successful submission
       clearOnboardingData();
+      // Also clear userId from localStorage since user is now fully registered
+      localStorage.removeItem("onboarding_user_id");
 
       return {
         success: true,
         data: response.data,
+        userId: response.data.userId || userId,
       };
     } catch (error: any) {
       return {

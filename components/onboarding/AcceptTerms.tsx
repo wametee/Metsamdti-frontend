@@ -10,6 +10,9 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { acceptTerms } from "@/lib/api/auth";
 import authService from "@/services/auth/authService";
+import { onboardingService } from "@/services";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function AcceptTerms() {
   const router = useRouter();
@@ -17,6 +20,15 @@ export default function AcceptTerms() {
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  const { isLoaded } = useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on accept-terms page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
 
   // Prevent hydration mismatch by only rendering after mount
   React.useEffect(() => {
@@ -43,43 +55,54 @@ export default function AcceptTerms() {
     
     setIsSubmitting(true);
     try {
-      // Check if user has a token first (avoid unnecessary API calls)
+      // Step 1: Initialize onboarding to get/create userId
+      // This creates a user record in the database (or uses existing if authenticated)
+      const initResult = await onboardingService.initializeOnboarding();
+      
+      if (!initResult.success || !initResult.userId) {
+        const errorMsg = initResult.message || 'Failed to initialize onboarding. Please try again.';
+        console.error('Onboarding initialization failed:', errorMsg);
+        alert(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Step 2: Store userId in localStorage for subsequent steps
+      localStorage.setItem('onboarding_user_id', initResult.userId);
+      
+      // Step 3: If user is authenticated, save terms acceptance to database
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       
       if (token) {
-        // User might be authenticated - try to save to database
         try {
           const userResult = await authService.getCurrentUser();
           if (userResult.success && userResult.user) {
-            // User is authenticated - save to database
             try {
               const result = await acceptTerms();
               if (result.success) {
-                // Proceed to thank you page
-                router.push('/onboarding/thankyou');
-                return;
+                console.log('Terms accepted in database for authenticated user');
               }
             } catch (apiError) {
-              // If API call fails, fall back to localStorage
-              console.warn('API call failed, saving to localStorage:', apiError);
+              // Non-critical - continue with onboarding
+              console.warn('Could not save terms to database, continuing:', apiError);
             }
           }
         } catch (error) {
-          // If getCurrentUser fails, fall back to localStorage
-          console.warn('getCurrentUser failed, saving to localStorage:', error);
+          // Non-critical - continue with onboarding
+          console.warn('Could not verify user, continuing:', error);
         }
       }
       
-      // User is not authenticated or API calls failed - save to localStorage
-      // When they sign up, we'll record it in the database
+      // Step 4: Save terms acceptance to localStorage (for anonymous users)
       localStorage.setItem('terms_accepted', 'true');
-      // Proceed to thank you page
+      
+      // Step 5: Proceed to thank you page
       router.push('/onboarding/thankyou');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting terms:', error);
-      // Fallback: save to localStorage even if there's an error
-      localStorage.setItem('terms_accepted', 'true');
-      router.push('/onboarding/thankyou');
+      const errorMsg = error.message || 'An error occurred. Please try again.';
+      alert(errorMsg);
+      setIsSubmitting(false);
     }
   };
 
@@ -90,6 +113,13 @@ export default function AcceptTerms() {
 
   return (
     <section className="min-h-screen w-full bg-gradient-to-b from-[#FCF8F8] to-[#F6E7EA] flex flex-col items-center justify-center px-4 py-8 relative">
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+      
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
+
       {/* Back button */}
       <button
         onClick={() => router.back()}

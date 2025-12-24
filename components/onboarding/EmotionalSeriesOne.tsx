@@ -11,9 +11,20 @@ import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
 import { StepProgressBar } from './ProgressBar';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function EmotionalSeriesOne() {
   const router = useRouter();
+
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on emotional-series-one page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
 
   const [emotionalBalance, setEmotionalBalance] = useState("");
   const [conflictEmotionalResponse, setConflictEmotionalResponse] = useState("");
@@ -44,7 +55,7 @@ export default function EmotionalSeriesOne() {
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { emotionalBalance: string; conflictEmotionalResponse: string; decisionMakingGuide: string }
   >(
-    (data) => onboardingService.submitEmotionalSeriesOne(data, ''),
+    (data, userId) => onboardingService.submitEmotionalSeriesOne(data, userId),
     '/onboarding/emotional-series-two'
   );
 
@@ -75,7 +86,8 @@ export default function EmotionalSeriesOne() {
   return (
    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
   pt-24 pb-10 md:py-20 px-4">
-
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* Back Button */}
       <button

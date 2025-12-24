@@ -6,16 +6,28 @@ import { FiArrowUpRight } from 'react-icons/fi';
 import Image from 'next/image';
 import logo from '@/assets/logo2.png';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 // Using shared LanguageSwitcher component for consistent behavior across the app
 
 export default function Welcome() {
   const router = useRouter();
+  
+  const { isLoaded } = useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on welcome page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
 
   return (
     <section className="min-h-screen w-full bg-[#FCF8F8] flex flex-col md:justify-center relative">
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+      
       {/* Top Right Language Switch */}
-      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E]">
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
         <LanguageSwitcher />
       </div>
 

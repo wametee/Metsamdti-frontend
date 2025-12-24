@@ -6,10 +6,21 @@ import { FiArrowUpRight } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa"
 import CancelMatchModal from "@/components/modal/CancelMatchModal";
 import UserHeader from "./UserHeader";
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function CancelMatch() {
   const router = useRouter();
   const [isCancelOpen, setIsCancelOpen] = useState(false);
+
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on cancel-match page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
 
   function handleCancelSubmit() {
     // close modal then navigate
@@ -19,6 +30,8 @@ export default function CancelMatch() {
 
   return (
     <section className="min-h-screen w-full bg-[#F0DBDA] flex flex-col relative">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* ───────── Header ───────── */}
       <UserHeader />

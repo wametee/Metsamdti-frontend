@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import Image from "next/image";
@@ -14,6 +14,7 @@ import { getOnboardingData } from '@/lib/utils/localStorage';
 import { StepProgressBar } from './ProgressBar';
 import { validateBirthday, validateRequired, showValidationError, validationMessages } from '@/lib/utils/validation';
 import { useOnboardingStepValidation } from '@/hooks/useOnboardingStepValidation';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function BackgroundSeriesOne() {
   // ============================================================================
@@ -41,10 +42,20 @@ export default function BackgroundSeriesOne() {
   const [birthday, setBirthday] = useState<string>('');
   const [ageError, setAgeError] = useState<string>("");
 
-  // Hook 7: Submit handler - CRITICAL: Must be called before ANY conditional returns
+  // Hook 7: Google Translate initialization
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on background-series-one page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Hook 8: Submit handler - CRITICAL: Must be called before ANY conditional returns
   // Internally calls:
   //   - useRouter() (duplicate, but React handles this)
-  //   - useOnboardingSession() -> useState(), useEffect()
+  //   - useOnboardingUser() -> useState(), useEffect()
   //   - useState() (isSubmitting)
   //   - useState() (error)
   //   - useMutation() -> useContext() (accesses QueryClient)
@@ -54,37 +65,27 @@ export default function BackgroundSeriesOne() {
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { birthday: string; gender: string; languages: string[] }
   >(
-    (data) => onboardingService.submitBackgroundSeriesOne(data, ''),
+    (data, userId) => onboardingService.submitBackgroundSeriesOne(data, userId),
     '/onboarding/background-series-two'
   );
 
-  // Hook 8: Load saved data from localStorage - only once on mount
-  // Use ref to prevent re-loading after user interactions
-  const dataLoadedRef = useRef(false);
+  // Hook 9: Load saved data from localStorage
+  // This useEffect must be called on every render, even if we return early
   useEffect(() => {
-    // Only load data once, and only if it hasn't been loaded yet
-    if (dataLoadedRef.current) return;
-    
     const saved = getOnboardingData();
     if (saved) {
-      // Only set values if they're not already set (to avoid overwriting user input)
-      if (!gender && saved.gender) {
-        setGender(saved.gender);
-      }
+      setGender(saved.gender || '');
       // Handle languages - could be string or string[]
-      if (!languages) {
-        const savedLanguages = saved.languages;
-        if (Array.isArray(savedLanguages)) {
-          setLanguages(savedLanguages[0] || '');
-        } else if (typeof savedLanguages === 'string') {
-          setLanguages(savedLanguages);
-        }
+      const savedLanguages = saved.languages;
+      if (Array.isArray(savedLanguages)) {
+        setLanguages(savedLanguages[0] || '');
+      } else if (typeof savedLanguages === 'string') {
+        setLanguages(savedLanguages);
+      } else {
+        setLanguages('');
       }
-      if (!birthday && saved.birthday) {
-        setBirthday(saved.birthday);
-      }
+      setBirthday(saved.birthday || '');
     }
-    dataLoadedRef.current = true;
   }, []);
 
   // ============================================================================
@@ -96,6 +97,8 @@ export default function BackgroundSeriesOne() {
   if (isValidating) {
     return (
       <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
+        {/* Hidden Google Translate Element */}
+        <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
         <div className="w-full max-w-3xl md:max-w-4xl lg:max-w-1xl bg-[#EDD4D3] border-2 border-white rounded-2xl py-10 px-6 md:px-20 shadow-md">
           <p className="text-center text-[#702C3E]">Loading...</p>
         </div>
@@ -161,7 +164,13 @@ export default function BackgroundSeriesOne() {
   return (
    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
    pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
+      {/* Language Switcher - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button
@@ -170,11 +179,6 @@ export default function BackgroundSeriesOne() {
       >
         <FaArrowLeft className="w-5 h-5" />
       </button>
-
-      {/* Language Switcher */}
-      <div className="absolute right-6 top-6">
-        <LanguageSwitcher />
-      </div>
 
       {/* Outer Card */}
      <div className="

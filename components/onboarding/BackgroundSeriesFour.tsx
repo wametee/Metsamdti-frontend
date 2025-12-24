@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -9,43 +9,45 @@ import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
 import { getOnboardingData } from '@/lib/utils/localStorage';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 import { StepProgressBar } from './ProgressBar';
 
 export default function BackgroundSeriesFour() {
   const router = useRouter();
   const [previouslyMarried, setPreviouslyMarried] = useState<boolean | null>(null);
-  const [hasChildren, setHasChildren] = useState<"Yes" | "No" | "Prefer not to say" | null>(null);
+  const [hasChildren, setHasChildren] = useState<boolean | null>(null);
+  const [preferNotToSay, setPreferNotToSay] = useState<boolean>(false);
 
-  // Load saved data - only once on mount
-  const dataLoadedRef = useRef(false);
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on background-series-four page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Load saved data
   useEffect(() => {
-    if (dataLoadedRef.current) return;
-    
     const saved = getOnboardingData();
     if (saved) {
-      // Only set values if they're not already set (to avoid overwriting user input)
-      if (previouslyMarried === null && saved.previouslyMarried !== undefined) {
-        setPreviouslyMarried(saved.previouslyMarried);
-      }
-      if (hasChildren === null && saved.hasChildren !== undefined) {
-        // Convert boolean to string representation
-        if (saved.hasChildren === true) {
-          setHasChildren("Yes");
-        } else if (saved.hasChildren === false) {
-          setHasChildren("No");
-        } else {
-          setHasChildren(null);
-        }
+      if (saved.previouslyMarried !== undefined) setPreviouslyMarried(saved.previouslyMarried);
+      if (saved.hasChildren !== undefined) {
+        setHasChildren(saved.hasChildren);
+        // If hasChildren is false, check if it was "prefer not to say" or "no"
+        // We'll default to "no" if not explicitly set
+        setPreferNotToSay(saved.preferNotToSay === true);
       }
     }
-    dataLoadedRef.current = true;
   }, []);
 
   // Use submit hook
   const { handleSubmit, isSubmitting, error } = useOnboardingSubmit<
     { previouslyMarried: boolean; hasChildren: boolean }
   >(
-    (data) => onboardingService.submitBackgroundSeriesFour(data, ''),
+    (data, userId) => onboardingService.submitBackgroundSeriesFour(data, userId),
     '/onboarding/background-series-five'
   );
 
@@ -55,30 +57,41 @@ export default function BackgroundSeriesFour() {
       alert('Please answer if you have been married before');
       return;
     }
-    if (hasChildren === null) {
+    if (hasChildren === null && !preferNotToSay) {
       alert('Please answer if you have children');
       return;
     }
-    
-    // Convert string value to boolean for backend compatibility
-    // "Yes" -> true, "No" or "Prefer not to say" -> false
-    const hasChildrenBoolean = hasChildren === "Yes";
-    
-    handleSubmit({ previouslyMarried, hasChildren: hasChildrenBoolean }, e);
+    // If preferNotToSay is true, send false for hasChildren (backend expects boolean)
+    handleSubmit({ 
+      previouslyMarried, 
+      hasChildren: preferNotToSay ? false : hasChildren 
+    }, e);
   };
 
   const handleMaritalStatus = (value: string) => {
     setPreviouslyMarried(value !== "No");
   };
 
-  const handleChildren = (value: "Yes" | "No" | "Prefer not to say") => {
-    setHasChildren(value);
+  const handleChildren = (value: string) => {
+    if (value === "Prefer not to say") {
+      setHasChildren(null); // Set to null to indicate "prefer not to say"
+      setPreferNotToSay(true);
+    } else {
+      setHasChildren(value === "Yes");
+      setPreferNotToSay(false);
+    }
   };
 
   return (
   <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
   pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button
@@ -199,7 +212,7 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={hasChildren === "No"}
+                  checked={hasChildren === false && !preferNotToSay}
                   onChange={() => handleChildren("No")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -219,7 +232,7 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={hasChildren === "Yes"}
+                  checked={hasChildren === true}
                   onChange={() => handleChildren("Yes")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />
@@ -239,7 +252,7 @@ export default function BackgroundSeriesFour() {
                 <input
                   type="radio"
                   name="children"
-                  checked={hasChildren === "Prefer not to say"}
+                  checked={preferNotToSay === true}
                   onChange={() => handleChildren("Prefer not to say")}
                   className="w-4 h-4 accent-[#702C3E]"
                 />

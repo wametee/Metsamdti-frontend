@@ -11,7 +11,8 @@ import logo from "@/assets/logo2.png";
 import { authService } from '@/services';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from "react-toastify";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 export default function Login() {
   const router = useRouter();
@@ -19,24 +20,33 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async () => {
       setIsSubmitting(true);
-      setError(null);
 
       // Validation
       if (!email || !password) {
-        throw new Error('Email and password are required');
+        const errorMsg = 'Email and password are required';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       // Call login service
       const result = await authService.login({ email, password });
 
       if (!result.success) {
-        throw new Error(result.message || 'Login failed');
+        // Always show generic error message for security
+        const errorMsg = result.message || 'Wrong email or password';
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        throw new Error(errorMsg);
       }
 
       return result;
@@ -53,10 +63,25 @@ export default function Login() {
       }, 500);
     },
     onError: (error: any) => {
-      const errorMessage = error.message || 'An error occurred';
-      setError(errorMessage);
       setIsSubmitting(false);
-      // Error toast is already shown by the error interceptor
+      // Show error toast if not already shown
+      if (!error.toastShown) {
+        const errorMessage = error.message || 'An error occurred';
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    },
+  });
+
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on login page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
     },
   });
 
@@ -67,6 +92,13 @@ export default function Login() {
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher />
+      </div>
 
       {/* Back Button */}
       <button
@@ -159,11 +191,6 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Error Message - Always render to prevent hydration mismatch */}
-          <div className={`mt-2 ${error ? 'p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm' : 'h-0 overflow-hidden'}`}>
-            {error}
-          </div>
-
           {/* Sign In Button */}
           <button
             type="submit"
@@ -178,16 +205,6 @@ export default function Login() {
           >
             {isSubmitting ? 'Signing in...' : 'Sign in'} <FiArrowUpRight className="w-4 h-4" />
           </button>
-
-          {/* Divider */}
-          {/* <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-[#D6C2C2]" />
-            <span className="text-xs text-[#6B5B5B]">or</span>
-            <div className="flex-1 h-px bg-[#D6C2C2]" />
-          </div> */}
-
-          {/* Google Button */}
-          {/* <GoogleSignInButton /> */}
 
           {/* Login Link */}
           <p className="text-center text-xs text-[#6B5B5B] mt-4">

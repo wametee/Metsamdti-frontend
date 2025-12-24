@@ -67,7 +67,7 @@ export default function GoogleSignInButton({
 
       // CRITICAL: Check if user needs to complete onboarding
       // New users OR users without phone MUST go through phone collection and onboarding
-      const hasPhone = result.user?.phone || result.user?.phone_number;
+      const hasPhone = result.user?.phone;
       
       if (isNewUser || !hasPhone) {
         // New user or user without phone - MUST go through phone collection and onboarding

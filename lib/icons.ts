@@ -18,3 +18,5 @@ export { AiFillCaretLeft } from 'react-icons/ai';
 
 // Social icons
 export { FaTwitter, FaInstagram, FaGithub, FaLinkedinIn } from 'react-icons/fa';
+
+

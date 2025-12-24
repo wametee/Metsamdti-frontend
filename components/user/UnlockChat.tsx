@@ -4,12 +4,25 @@ import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import love from "@/assets/love3.png";
 import UserHeader from "./UserHeader";
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 // matchIllustration asset is missing in the repo. Use logo as a placeholder
 // replace with: import matchIllustration from "@/assets/match-illustration.png";
 
 export default function UnlockChat() {
+  // Initialize Google Translate
+  useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on unlock-chat page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
   return (
     <section className="min-h-screen w-full bg-[#F0DBDA] flex flex-col">
+      {/* Hidden Google Translate Element - must exist for translation to work */}
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
       {/* ───────── Header ───────── */}
       <UserHeader />

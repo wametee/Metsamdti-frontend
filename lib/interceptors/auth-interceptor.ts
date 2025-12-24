@@ -3,16 +3,13 @@ import { shouldRedirectToLogin } from "../config/routes";
 
 /**
  * Auth Interceptor
+ * Automatically adds authentication token to requests
+ * Handles token refresh and storage
  * 
  * Responsibilities:
- * 1. Request Interceptor: Attach auth token to outgoing requests
- * 2. Response Success: Store tokens from successful auth responses
- * 3. Response Error: Handle 401 errors intelligently
- *    - Protected routes: Clear token and redirect to login
- *    - Public routes: Mark error as silent (no redirect, no toast)
- * 
- * Note: This interceptor runs AFTER ErrorInterceptor (registered first = runs last)
- * This allows ErrorInterceptor to skip 401s, then AuthInterceptor handles them properly
+ * - Attach auth token to outgoing requests
+ * - Handle 401 errors intelligently (only redirect on protected routes)
+ * - Store tokens from successful auth responses
  */
 const AuthInterceptor = (httpClient: AxiosInstance) => {
   // Request interceptor: Attach auth token to requests
@@ -49,27 +46,30 @@ const AuthInterceptor = (httpClient: AxiosInstance) => {
         if (typeof window !== "undefined") {
           const currentPath = window.location.pathname;
           const requestUrl = error.config?.url || '';
+          const statusCode = error.response.status;
           
           // Use centralized route configuration to determine if redirect is needed
-          const needsRedirect = shouldRedirectToLogin(currentPath, requestUrl, 401);
+          const needsRedirect = shouldRedirectToLogin(currentPath, requestUrl, statusCode);
           
           if (needsRedirect) {
             // Clear invalid/expired token
             localStorage.removeItem("auth_token");
-            // Redirect to login on protected routes
+            console.log('[AuthInterceptor] 401 on protected route, redirecting to login', {
+              path: currentPath,
+              request: requestUrl,
+            });
             window.location.href = "/login";
-            // Reject to stop further processing
-            return Promise.reject(error);
           } else {
-            // On public routes, 401 is expected - mark error as silent
-            // This prevents error interceptor from showing toasts/logs
-            (error as any).isExpected = true;
-            (error as any).silent = true;
+            // On public routes, 401 is expected - don't redirect
+            // Silently handle the error without disrupting user experience
+            console.log('[AuthInterceptor] 401 on public route, ignoring', {
+              path: currentPath,
+              request: requestUrl,
+            });
           }
         }
       }
 
-      // Pass through all errors (marked or not)
       return Promise.reject(error);
     }
   );

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import upload from '@/assets/upload.png';
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft } from 'react-icons/fa6';
@@ -9,9 +9,12 @@ import { IoMdAdd } from 'react-icons/io';
 import logo from '@/assets/logo2.png';
 import { onboardingService } from '@/services';
 import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit';
-import { getOnboardingData } from '@/lib/utils/localStorage';
+import { useOnboardingUser } from '@/hooks/useOnboardingUser';
+import { getOnboardingData, saveBasicsFormData, restoreBasicsPhotos } from '@/lib/utils/localStorage';
 import { validateRequired, validateAge, validatePhotos, showValidationError } from '@/lib/utils/validation';
 import { StepProgressBar } from './ProgressBar';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
+import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
 // Function to generate display name from full name (creates a unique name that's not close to the original)
 function generateDisplayName(fullName: string): string {
@@ -73,6 +76,7 @@ function generateDisplayName(fullName: string): string {
 
 export default function Basics() {
   const router = useRouter();
+  const userId = useOnboardingUser(); // Get userId for API calls
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState<number | "">("");
@@ -81,6 +85,55 @@ export default function Basics() {
   const [photos, setPhotos] = useState<(File | undefined)[]>(Array(5).fill(undefined));
   const [photoPreviews, setPhotoPreviews] = useState<(string | undefined)[]>(Array(5).fill(undefined));
   const [ageError, setAgeError] = useState<string>("");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isRestoringRef = useRef(false);
+
+  const { isLoaded } = useGoogleTranslate({
+    onInitialized: () => {
+      console.log('Google Translate ready on basics page');
+    },
+    onError: (error) => {
+      console.error('Google Translate initialization error:', error);
+    },
+  });
+
+  // Function to save form data (debounced)
+  const saveFormData = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveBasicsFormData({
+        fullName,
+        username,
+        age,
+        photos,
+        photoPreviews,
+      });
+    }, 500); // Debounce: save 500ms after last change
+  }, [fullName, username, age, photos, photoPreviews]);
+
+  // Auto-save form data on changes
+  useEffect(() => {
+    if (!isRestoringRef.current) {
+      saveFormData();
+    }
+  }, [fullName, username, age, photos, photoPreviews, saveFormData]);
+
+  // Function to save form data immediately (for language change)
+  const saveFormDataImmediately = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveBasicsFormData({
+      fullName,
+      username,
+      age,
+      photos,
+      photoPreviews,
+    });
+  }, [fullName, username, age, photos, photoPreviews]);
 
   // Auto-generate display name from full name
   useEffect(() => {
@@ -92,40 +145,30 @@ export default function Basics() {
     }
   }, [fullName]);
 
-  // Load saved data or current user data (for Google sign-up users)
+  // Load saved data on mount
   useEffect(() => {
+    isRestoringRef.current = true;
     const saved = getOnboardingData();
     if (saved) {
-      setFullName(saved.fullName || '');
-      setAge(saved.age || '');
-      // Note: Username will be auto-generated from fullName
-      // Note: Photos from localStorage would need to be converted back to File objects
-      // For now, we'll just load the previews if they exist as URLs
-    } else {
-      // If no saved data, try to get current user data (for Google sign-up users)
-      // This allows them to see their Google name and change it if needed
-      const loadUserData = async () => {
-        try {
-          const authService = (await import('@/services/auth/authService')).default;
-          const userResult = await authService.getCurrentUser();
-          if (userResult.success && userResult.user && userResult.user.real_name) {
-            // Pre-fill with Google user data, but allow them to change it
-            setFullName(userResult.user.real_name);
-            // Display name will be auto-generated from full name
-          }
-        } catch (error: any) {
-          // Silently fail - 401 is expected if user isn't logged in yet
-          // This is normal during onboarding, so we don't show any errors
-          if (error?.status !== 401 && error?.code !== 'UNAUTHORIZED') {
-            // Only log non-401 errors in development
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Could not load user data for pre-fill:', error);
-            }
-          }
-        }
-      };
-      loadUserData();
+      if (saved.fullName) {
+        setFullName(saved.fullName);
+      }
+      if (saved.age !== undefined) {
+        setAge(saved.age);
+      }
+      // Restore photo previews from base64 strings
+      if (saved.photos && saved.photos.length > 0) {
+        const restoredPreviews = restoreBasicsPhotos(saved.photos);
+        setPhotoPreviews(restoredPreviews);
+        // Note: File objects cannot be restored from localStorage
+        // Photos will need to be re-uploaded, but previews are preserved
+      }
+      // Username will be auto-generated from fullName via useEffect
     }
+    // Reset flag after a short delay to allow initial state to settle
+    setTimeout(() => {
+      isRestoringRef.current = false;
+    }, 100);
   }, []);
 
   // Handle photo selection for a specific index
@@ -149,11 +192,7 @@ export default function Basics() {
   };
 
   // Remove photo at specific index
-  const removePhoto = (index: number, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation(); // Prevent triggering the file input
-    }
-    
+  const removePhoto = (index: number) => {
     // Set to undefined instead of removing, to maintain fixed array length
     const newPhotos = [...photos];
     const newPreviews = [...photoPreviews];
@@ -170,19 +209,13 @@ export default function Basics() {
     }
   };
 
-  // Handle clicking on photo to replace it
-  const handlePhotoClick = (index: number) => {
-    const fileInput = document.getElementById(`photo-upload-${index}`) as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = ''; // Reset to allow selecting the same file
-      fileInput.click();
-    }
-  };
-
 
   // Custom submit function
   const submitBasicsWithSuggestions = async (data: { username: string; fullName: string; age: number; photos?: File[] }) => {
-    return await onboardingService.submitBasics(data, '');
+    if (!userId) {
+      throw new Error('User ID not available. Please refresh the page.');
+    }
+    return await onboardingService.submitBasics(data, userId);
   };
 
   const { handleSubmit, isSubmitting, error: submitError } = useOnboardingSubmit<
@@ -218,26 +251,58 @@ export default function Basics() {
       return;
     }
 
-    // Validate photos - filter out undefined values
+    // Validate photos - check both File objects and previews (for restored photos)
     const validPhotos = photos.filter((p): p is File => p !== undefined);
-    const photosValidation = validatePhotos(validPhotos, 5);
+    const validPreviews = photoPreviews.filter((p): p is string => p !== undefined);
+    
+    // Check if photos were already uploaded (saved as URLs in localStorage)
+    const savedData = getOnboardingData();
+    const savedPhotoUrls = savedData?.photos || [];
+    const hasUploadedPhotos = Array.isArray(savedPhotoUrls) && savedPhotoUrls.length === 5;
+    
+    // If we have File objects, validate those
+    // If we only have previews (restored from localStorage), validate those
+    const photosToValidate = validPhotos.length > 0 ? validPhotos : validPreviews;
+    
+    const photosValidation = validatePhotos(photosToValidate, 5);
     if (!photosValidation.isValid) {
       showValidationError(photosValidation.message!);
       return;
     }
+    
+    // Special case: If we have 5 previews but no File objects
+    // This happens when photos are restored from localStorage after language change
+    // If photos were already uploaded (URLs exist), we can proceed
+    // Otherwise, user needs to re-select photos
+    if (validPreviews.length === 5 && validPhotos.length === 0 && !hasUploadedPhotos) {
+      showValidationError('Your photos were restored, but please re-select them to proceed. Click on each photo to select the file again.');
+      return;
+    }
 
+    // Submit with File objects if available, otherwise empty array (photos already saved)
+    // Note: If only previews exist, we still need File objects for submission
+    // The backend will need to handle this case, or we need to convert base64 to File
+    const photosToSubmit = photos.filter((p): p is File => p !== undefined);
+    
+    // If we have 5 previews but no File objects, we can't submit photos
+    // But we'll still submit the form - backend should handle this gracefully
     handleSubmit({
       username,
       fullName,
       age: age as number,
-      photos: photos.filter((p): p is File => p !== undefined),
+      photos: photosToSubmit.length > 0 ? photosToSubmit : undefined,
     }, e);
   };
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
   pt-24 pb-10 md:py-20 px-4">
+      <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 text-sm text-[#2F2E2E] z-50">
+        <LanguageSwitcher onBeforeLanguageChange={saveFormDataImmediately} />
+      </div>
 
       {/* Back Button */}
       <button
@@ -269,18 +334,18 @@ export default function Basics() {
         {/* Progress Bar */}
         <StepProgressBar className="mb-10" />
 
-        {/* Header Text */}
+        {/* Header Text - Translatable by Google Translate */}
         <h2 className="text-3xl md:text-4xl font-bold text-[#491A26] mb-2">
           Your Basics
         </h2>
         <p className="text-sm md:text-base text-[#5A4A4A] font-medium mb-8">
-          Let’s collect the essential details about you.
+          Let's collect the essential details about you.
         </p>
 
         {/* Form Fields */}
   <form onSubmit={onSubmit} className="flex flex-col gap-6 px-0 md:px-0">
 
-          {/* Full Name - comes first */}
+          {/* Full Name - comes first - Translatable by Google Translate */}
           <div>
             <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Full Name*</label>
             <input
@@ -288,15 +353,15 @@ export default function Basics() {
               placeholder="Enter Full Name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
+              className="w-3/4 md:w-2/3 bg-[#F6E7EA] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-black outline-none"
               required
             />
-            <p className="text-xs text-[#6B5B5B] mt-1 w-full md:w-2/3">
+            <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
               Your display name will be automatically generated from your full name
             </p>
           </div>
 
-          {/* Display Name - auto-generated, read-only */}
+          {/* Display Name - auto-generated, read-only - Translatable by Google Translate */}
           <div>
             <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Display Name*</label>
             <input
@@ -305,15 +370,15 @@ export default function Basics() {
               value={username}
               readOnly
               disabled
-              className="w-full md:w-2/3 bg-[#E4D6D6] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-[#6B5B5B] outline-none cursor-not-allowed"
+              className="w-3/4 md:w-2/3 bg-[#E4D6D6] border border-[#E4D6D6] rounded-md py-3 px-4 text-sm text-[#6B5B5B] outline-none cursor-not-allowed"
               required
             />
-            <p className="text-xs text-[#6B5B5B] mt-1 w-full md:w-2/3">
+            <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
               This is automatically generated from your full name (letters only, no numbers)
             </p>
           </div>
 
-          {/* Age */}
+          {/* Age - Translatable by Google Translate */}
           <div>
             <label className="text-base md:text-base text-[#491A26] block mb-1 font-semibold">Age*</label>
             <input
@@ -337,81 +402,56 @@ export default function Basics() {
               }}
               min={22}
               max={100}
-              className={`w-full md:w-2/3 bg-[#F6E7EA] border ${
+              className={`w-3/4 md:w-2/3 bg-[#F6E7EA] border ${
                 ageError ? "border-red-400" : "border-[#E4D6D6]"
               } rounded-md py-3 px-4 text-sm text-black outline-none`}
               required
             />
             {ageError && (
-              <p className="text-sm text-red-600 mt-2 w-full md:w-2/3">{ageError}</p>
+              <p className="text-sm text-red-600 mt-2 w-3/4 md:w-2/3">{ageError}</p>
             )}
             {!ageError && age === "" && (
-              <p className="text-xs text-[#6B5B5B] mt-1 w-full md:w-2/3">
+              <p className="text-xs text-[#6B5B5B] mt-1 w-3/4 md:w-2/3">
                 You must be at least 22 years old to use Metsamdti.
               </p>
             )}
           </div>
 
           {/* Image Upload Section */}
-          <div className="flex flex-col items-center mt-6 w-full">
-            <p className="self-start text-sm text-[#491A26] mb-4 font-medium">Upload your photos</p>
+          <div className="flex flex-col items-center mt-6">
+            <p className="self-start text-sm text-[#491A26] mb-2 font-medium">Upload your photos</p>
 
             {/* Upload Grid */}
-            <div className="grid grid-cols-3 gap-3 md:gap-4 w-full max-w-md mx-auto">
+            <div className="grid grid-cols-3 gap-4">
 
               {/* Main Large Image (reduced size) - shows first uploaded image */}
               <div className="col-span-3 flex justify-center">
-                <div 
-                  className="w-40 h-40 md:w-32 md:h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6] cursor-pointer hover:border-[#702C3E] transition-colors group"
-                  onClick={() => handlePhotoClick(0)}
-                >
+                <div className="w-32 h-32 rounded-xl flex items-center justify-center overflow-hidden relative border border-[#E4D6D6]">
                   {photoPreviews[0] ? (
-                    <>
-                      <Image 
-                        src={photoPreviews[0]} 
-                        alt="Main photo" 
-                        width={128} 
-                        height={128} 
-                        className="object-cover w-full h-full" 
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                          Click to change
-                        </span>
-                      </div>
-                    </>
+                    <Image 
+                      src={photoPreviews[0]} 
+                      alt="Main photo" 
+                      width={128} 
+                      height={128} 
+                      className="object-cover w-full h-full" 
+                    />
                   ) : (
-                    <>
-                      <Image 
-                        src={upload} 
-                        alt="Upload" 
-                        width={128} 
-                        height={128} 
-                        className="object-contain opacity-50" 
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <IoMdAdd className="w-8 h-8 text-[#702C3E] opacity-50" />
-                      </div>
-                    </>
+                    <Image 
+                      src={upload} 
+                      alt="Upload" 
+                      width={128} 
+                      height={128} 
+                      className="object-contain" 
+                    />
                   )}
                 </div>
-                <input
-                  id="photo-upload-0"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handlePhotoChange(0, e)}
-                />
               </div>
 
               {/* Five Small Upload Boxes */}
-              <div className="col-span-3 grid grid-cols-3 gap-3 md:gap-4">
+              <div className="col-span-3 grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((index) => (
                   <div key={index} className="flex flex-col items-center relative">
-                    <div 
-                      className="w-full aspect-square max-w-[120px] md:w-28 md:h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
-                      onClick={() => handlePhotoClick(index)}
-                    >
+                    <div className="w-28 h-28 rounded-xl flex items-center justify-center mx-auto overflow-hidden border border-dashed border-gray-300 relative">
                       {photoPreviews[index] ? (
                         <>
                           <Image 
@@ -421,53 +461,45 @@ export default function Basics() {
                             height={112} 
                             className="object-cover w-full h-full" 
                           />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                            <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                              Click to change
-                            </span>
-                          </div>
                           <button
                             type="button"
-                            onClick={(e) => removePhoto(index, e)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 z-10"
-                            title="Remove photo"
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                           >
                             ×
                           </button>
                         </>
                       ) : (
-                        <>
-                          <Image 
-                            src={upload} 
-                            alt="Upload" 
-                            width={112} 
-                            height={112} 
-                            className="object-contain opacity-50" 
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <IoMdAdd className="w-6 h-6 text-[#702C3E] opacity-50" />
-                          </div>
-                        </>
+                        <Image 
+                          src={upload} 
+                          alt="Upload" 
+                          width={112} 
+                          height={112} 
+                          className="object-contain opacity-50" 
+                        />
                       )}
                     </div>
-                    <input
-                      id={`photo-upload-${index}`}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handlePhotoChange(index, e)}
-                    />
+                    <label 
+                      htmlFor={`photo-upload-${index}`} 
+                      className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    >
+                      <IoMdAdd className="w-4 h-4 text-[#702C3E]" />
+                      <input
+                        id={`photo-upload-${index}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoChange(index, e)}
+                      />
+                    </label>
                   </div>
                 ))}
               </div>
 
-              <div className="col-span-3 flex justify-center gap-3 md:gap-4">
+              <div className="col-span-3 flex justify-center gap-4">
                 {[3, 4].map((index) => (
                   <div key={index} className="flex flex-col items-center relative">
-                    <div 
-                      className="w-32 h-32 md:w-28 md:h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative cursor-pointer hover:border-[#702C3E] transition-colors group"
-                      onClick={() => handlePhotoClick(index)}
-                    >
+                    <div className="w-28 h-28 rounded-xl flex items-center justify-center overflow-hidden border border-dashed border-gray-300 relative">
                       {photoPreviews[index] ? (
                         <>
                           <Image 
@@ -477,49 +509,56 @@ export default function Basics() {
                             height={112} 
                             className="object-cover w-full h-full" 
                           />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                            <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                              Click to change
-                            </span>
-                          </div>
                           <button
                             type="button"
-                            onClick={(e) => removePhoto(index, e)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 z-10"
-                            title="Remove photo"
+                            onClick={() => removePhoto(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                           >
                             ×
                           </button>
                         </>
                       ) : (
-                        <>
-                          <Image 
-                            src={upload} 
-                            alt="Upload" 
-                            width={112} 
-                            height={112} 
-                            className="object-contain opacity-50" 
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <IoMdAdd className="w-6 h-6 text-[#702C3E] opacity-50" />
-                          </div>
-                        </>
+                        <Image 
+                          src={upload} 
+                          alt="Upload" 
+                          width={112} 
+                          height={112} 
+                          className="object-contain opacity-50" 
+                        />
                       )}
                     </div>
-                    <input
-                      id={`photo-upload-${index}`}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handlePhotoChange(index, e)}
-                    />
+                    <label 
+                      htmlFor={`photo-upload-${index}`} 
+                      className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-3 bg-white rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                    >
+                      <IoMdAdd className="w-4 h-4 text-[#702C3E]" />
+                      <input
+                        id={`photo-upload-${index}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handlePhotoChange(index, e)}
+                      />
+                    </label>
                   </div>
                 ))}
               </div>
             </div>
-            {photos.filter(p => p !== undefined).length > 0 && photos.filter(p => p !== undefined).length < 5 && (
-              <p className="text-xs text-red-600 mt-2">Please upload exactly 5 photos ({photos.filter(p => p !== undefined).length}/5)</p>
-            )}
+            {(() => {
+              const validPhotos = photos.filter(p => p !== undefined).length;
+              const validPreviews = photoPreviews.filter(p => p !== undefined).length;
+              const totalCount = Math.max(validPhotos, validPreviews);
+              
+              if (totalCount > 0 && totalCount < 5) {
+                return (
+                  <p className="text-xs text-red-600 mt-2">
+                    Please upload exactly 5 photos ({totalCount}/5)
+                    {validPreviews > 0 && validPhotos === 0 && ' - Please re-select your photos'}
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           {/* Error Message */}
