@@ -116,8 +116,7 @@ export default function GooglePhonePage() {
       // Update user phone number
       const result = await authService.updatePhone(
         fullPhoneNumber,
-        phoneCountryCode,
-        phoneNumber.trim()
+        phoneCountryCode
       );
 
       if (!result.success) {
