@@ -243,18 +243,31 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
     }
   }
   
-  // For Eritrean Tigrinya (ti), ensure proper cookie format
-  // Google Translate uses '/en/ti' format for Tigrinya translations
-  const cookieValue = languageCode === 'en' ? '' : `/en/${languageCode}`;
+  // For English, we need to clear the translation cookie completely
+  // For other languages, use '/en/{lang}' format
   const domain = window.location.hostname;
   
   // Set cookie with proper attributes for cross-page persistence
   // This works regardless of user authentication or data state
   try {
-    document.cookie = `googtrans=${cookieValue}; path=/; max-age=31536000; SameSite=Lax`;
-    
-    if (domain !== 'localhost' && !domain.includes('localhost')) {
-      document.cookie = `googtrans=${cookieValue}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
+    if (languageCode === 'en') {
+      // For English, delete the cookie by setting it to expire in the past
+      // Also set it to empty to clear any translation
+      document.cookie = `googtrans=; path=/; max-age=0; SameSite=Lax`;
+      document.cookie = `googtrans=/en/en; path=/; max-age=31536000; SameSite=Lax`;
+      
+      if (domain !== 'localhost' && !domain.includes('localhost')) {
+        document.cookie = `googtrans=; path=/; domain=${domain}; max-age=0; SameSite=Lax`;
+        document.cookie = `googtrans=/en/en; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
+      }
+    } else {
+      // For other languages, use the standard format
+      const cookieValue = `/en/${languageCode}`;
+      document.cookie = `googtrans=${cookieValue}; path=/; max-age=31536000; SameSite=Lax`;
+      
+      if (domain !== 'localhost' && !domain.includes('localhost')) {
+        document.cookie = `googtrans=${cookieValue}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
+      }
     }
   } catch (error) {
     console.warn('Warning: Could not set cookie, but proceeding with language change:', error);
@@ -268,6 +281,9 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
       // Store metadata for Eritrean Tigrinya
       if (languageCode === 'ti') {
         localStorage.setItem('google_translate_variant', 'eritrean');
+      } else if (languageCode === 'en') {
+        // Clear variant when switching to English
+        localStorage.removeItem('google_translate_variant');
       }
     } catch (error) {
       console.warn('Warning: Could not save to localStorage, but proceeding:', error);
@@ -282,13 +298,22 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
     const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (selectField) {
       try {
-        selectField.value = languageCode;
+        // For English, we need to ensure the select field is set correctly
+        // Google Translate uses 'en' as the value for English
+        const selectValue = languageCode === 'en' ? 'en' : languageCode;
+        selectField.value = selectValue;
+        
+        // Trigger change event to update Google Translate
         const changeEvent = new Event('change', { bubbles: true, cancelable: true });
         selectField.dispatchEvent(changeEvent);
+        
         console.log('Language changed via select field to:', languageCode);
-        if (languageCode === 'ti') {
+        if (languageCode === 'en') {
+          console.log('Switching back to original English content');
+        } else if (languageCode === 'ti') {
           console.log('Eritrean Tigrinya translation activated');
         }
+        
         setTimeout(() => {
           window.location.reload();
         }, reloadDelay);
