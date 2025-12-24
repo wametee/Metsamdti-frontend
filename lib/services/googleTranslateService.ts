@@ -1,12 +1,25 @@
-// googleTranslateService.ts
+/**
+ * Google Translate Service
+ * Production-ready, stable implementation for three languages: English, Swedish, Tigrinya
+ * 
+ * Features:
+ * - Robust cookie management across all domain variations
+ * - Synchronized state between localStorage and cookies
+ * - Proper initialization order handling
+ * - Race condition prevention
+ * - Comprehensive error handling
+ */
+
 export interface GoogleTranslateOptions {
   elementId: string;
   pageLanguage: string;
   includedLanguages: string;
-  layout?: number; // InlineLayout is a value object, use number for the layout value
+  layout?: number;
   autoDisplay?: boolean;
   multilanguagePage?: boolean;
 }
+
+export type SupportedLanguage = 'en' | 'sv' | 'ti';
 
 // Declare global types for Google Translate
 declare global {
@@ -41,50 +54,178 @@ declare global {
   }
 }
 
-export const loadGoogleTranslate = (): Promise<void> => {
-  // Check if already loaded
-  if (window.googleTranslateApiLoaded) {
-    console.log('Google Translate API already loaded');
-    return Promise.resolve();
-  }
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/google-translate-api-extended@2.3.1/index.min.js';
-    script.async = true;
-    script.onload = () => {
-      window.googleTranslateApiLoaded = true;
-      console.log('Google Translate API loaded successfully');
-      resolve();
-    };
-    script.onerror = (error: Event | string) => {
-      console.error('Failed to load Google Translate API:', error);
-      reject(error);
-    };
-    document.head.appendChild(script);
-  });
-};
+// Constants
+const COOKIE_NAME = 'googtrans';
+const STORAGE_KEY = 'google_translate_lang';
+const VARIANT_KEY = 'google_translate_variant';
+const COOKIE_EXPIRY_DAYS = 365;
+const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en', 'sv', 'ti'];
+const PAGE_LANGUAGE = 'en';
 
-export const initializeGoogleTranslate = (options: Partial<GoogleTranslateOptions> = {}): void => {
-  // Check if Google Translate API is fully loaded
-  if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) {
-    console.error('Google Translate API not fully loaded');
+/**
+ * Get all possible domain variations for cookie management
+ */
+function getAllDomainVariations(): string[] {
+  if (typeof window === 'undefined') return [];
+  
+  const hostname = window.location.hostname;
+  const baseDomain = hostname.replace(/^www\./, '');
+  
+  return [
+    hostname,           // www.metsamdti.com
+    `.${hostname}`,     // .www.metsamdti.com
+    baseDomain,         // metsamdti.com
+    `.${baseDomain}`,   // .metsamdti.com
+  ].filter(dom => dom && dom !== 'localhost' && !dom.includes('localhost'));
+}
+
+/**
+ * Delete a cookie across all domain variations
+ */
+function deleteCookieEverywhere(name: string): void {
+  if (typeof document === 'undefined') return;
+  
+  const paths = ['/', window.location.pathname];
+  const domains = getAllDomainVariations();
+  const pastDate = 'Thu, 01 Jan 1970 00:00:00 GMT';
+  
+  paths.forEach(path => {
+    // Delete without domain (current domain)
+    document.cookie = `${name}=; path=${path}; expires=${pastDate}; SameSite=Lax`;
+    document.cookie = `${name}=; path=${path}; max-age=0; SameSite=Lax`;
+    
+    // Delete with all domain variations
+    domains.forEach(domain => {
+      document.cookie = `${name}=; path=${path}; domain=${domain}; expires=${pastDate}; SameSite=Lax`;
+      document.cookie = `${name}=; path=${path}; domain=${domain}; max-age=0; SameSite=Lax`;
+    });
+  });
+}
+
+/**
+ * Set a cookie across all domain variations
+ */
+function setCookieEverywhere(name: string, value: string): void {
+  if (typeof document === 'undefined') return;
+  
+  const maxAge = COOKIE_EXPIRY_DAYS * 24 * 60 * 60; // Convert days to seconds
+  const domains = getAllDomainVariations();
+  
+  // Set without domain (current domain)
+  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  
+  // Set with all domain variations
+  domains.forEach(domain => {
+    document.cookie = `${name}=${value}; path=/; domain=${domain}; max-age=${maxAge}; SameSite=Lax`;
+  });
+}
+
+/**
+ * Get language from cookie - robust implementation
+ */
+export function getLanguageFromCookie(): SupportedLanguage | null {
+  if (typeof document === 'undefined') return null;
+  
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(`${COOKIE_NAME}=`)) {
+      const value = cookie.substring(COOKIE_NAME.length + 1);
+      
+      // Parse cookie value
+      if (value === '/en/sv') return 'sv';
+      if (value === '/en/ti') return 'ti';
+      // Empty, deleted, or /en/en means English (original)
+      if (value === '' || value === '/en' || value === '/en/en') return 'en';
+    }
+  }
+  
+  // No cookie found means English (original language)
+  return 'en';
+}
+
+/**
+ * Get current language from multiple sources (cookie, localStorage, select field)
+ * Returns the most authoritative source
+ */
+export function getCurrentLanguage(): SupportedLanguage {
+  if (typeof window === 'undefined') return 'en';
+  
+  // Priority 1: Check Google Translate select field (most accurate)
+  try {
+    const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+    if (selectField?.value && SUPPORTED_LANGUAGES.includes(selectField.value as SupportedLanguage)) {
+      return selectField.value as SupportedLanguage;
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  
+  // Priority 2: Check cookie
+  const cookieLang = getLanguageFromCookie();
+  if (cookieLang) return cookieLang;
+  
+  // Priority 3: Check localStorage
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY) as SupportedLanguage | null;
+    if (stored && SUPPORTED_LANGUAGES.includes(stored)) {
+      return stored;
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  
+  // Default to English
+  return 'en';
+}
+
+/**
+ * Synchronize language state across all storage mechanisms
+ */
+function syncLanguageState(language: SupportedLanguage): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Update localStorage
+    localStorage.setItem(STORAGE_KEY, language);
+    
+    // Update variant metadata for Tigrinya
+    if (language === 'ti') {
+      localStorage.setItem(VARIANT_KEY, 'eritrean');
+    } else {
+      localStorage.removeItem(VARIANT_KEY);
+    }
+    
+    // Update cookies
+    if (language === 'en') {
+      // Delete all translation cookies for English
+      deleteCookieEverywhere(COOKIE_NAME);
+    } else {
+      // Set translation cookie for other languages
+      const cookieValue = `/en/${language}`;
+      setCookieEverywhere(COOKIE_NAME, cookieValue);
+    }
+  } catch (error) {
+    console.warn('[GoogleTranslate] Failed to sync language state:', error);
+  }
+}
+
+/**
+ * Initialize Google Translate element
+ */
+export function initializeGoogleTranslate(options: Partial<GoogleTranslateOptions> = {}): void {
+  if (!window.google?.translate?.TranslateElement) {
+    console.error('[GoogleTranslate] API not fully loaded');
     return;
   }
 
-  // Get layout - use SIMPLE (0) as default if InlineLayout is not available
-  let layout: number = 0; // SIMPLE = 0
-  if (window.google.translate.TranslateElement.InlineLayout) {
-    layout = window.google.translate.TranslateElement.InlineLayout.SIMPLE;
-  }
-
+  const layout = window.google.translate.TranslateElement.InlineLayout?.SIMPLE || 0;
+  
   const defaultOptions: GoogleTranslateOptions = {
     elementId: 'google_translate_element',
-    pageLanguage: 'en',
-    // Optimized for Eritrean Tigrinya: 'ti' is the ISO 639-1 code for Tigrinya
-    // Google Translate uses 'ti' for both Eritrean and Ethiopian Tigrinya
-    // The system will prefer Eritrean variant based on context and user location
+    pageLanguage: PAGE_LANGUAGE,
     includedLanguages: 'en,sv,ti',
-    layout: options.layout !== undefined ? options.layout : layout,
+    layout,
     autoDisplay: false,
     multilanguagePage: true,
     ...options,
@@ -95,7 +236,6 @@ export const initializeGoogleTranslate = (options: Partial<GoogleTranslateOption
     defaultOptions.includedLanguages = `en,${defaultOptions.includedLanguages}`;
   }
 
-  // Initialize the translate element
   try {
     new window.google.translate.TranslateElement(
       {
@@ -107,118 +247,86 @@ export const initializeGoogleTranslate = (options: Partial<GoogleTranslateOption
       },
       defaultOptions.elementId
     );
-    console.log('Google Translate initialized with languages:', defaultOptions.includedLanguages);
-    console.log('Eritrean Tigrinya (ti) is configured and ready');
     
-    // After initialization, check if we need to apply a saved language
-    // This ensures translations are applied even if the cookie was set before GT loaded
-    const savedLang = getLanguageFromCookie();
-    if (savedLang && savedLang !== 'en') {
-      // Wait a bit for Google Translate to be fully ready
-      setTimeout(() => {
-        const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-        if (selectField && selectField.value !== savedLang) {
-          selectField.value = savedLang;
-          const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-          selectField.dispatchEvent(changeEvent);
-          
-          // Force a small delay then reload to ensure translation is applied
-          setTimeout(() => {
-            if (selectField.value === savedLang) {
-              console.log('Forcing page reload to apply translation for:', savedLang);
-              window.location.reload();
-            }
-          }, 500);
-        }
-      }, 2000);
-    }
+    console.log('[GoogleTranslate] Initialized with languages:', defaultOptions.includedLanguages);
   } catch (error) {
-    console.error('Error initializing Google Translate:', error);
+    console.error('[GoogleTranslate] Initialization error:', error);
+    throw error;
   }
-};
+}
 
-// Function to initialize with the standard Google Translate script (optimized for Eritrean Tigrinya)
-export const initializeWithStandardGoogleScript = (): Promise<void> => {
+/**
+ * Apply saved language after Google Translate initializes
+ */
+function applySavedLanguage(): void {
+  const savedLang = getLanguageFromCookie();
+  
+  if (!savedLang || savedLang === 'en') {
+    return; // English is default, no translation needed
+  }
+  
+  // Wait for Google Translate to be fully ready
+  const maxAttempts = 20;
+  let attempts = 0;
+  
+  const tryApply = () => {
+    attempts++;
+    const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+    
+    if (selectField && selectField.options.length > 0) {
+      // Select field is ready
+      if (selectField.value !== savedLang) {
+        selectField.value = savedLang;
+        const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+        selectField.dispatchEvent(changeEvent);
+        console.log('[GoogleTranslate] Applied saved language:', savedLang);
+      }
+    } else if (attempts < maxAttempts) {
+      // Retry after short delay
+      setTimeout(tryApply, 200);
+    }
+  };
+  
+  // Start trying after initial delay
+  setTimeout(tryApply, 1000);
+}
+
+/**
+ * Initialize Google Translate with standard script
+ */
+export function initializeWithStandardGoogleScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     // Check if already initialized
-    if (window.google && window.google.translate && document.getElementById('google_translate_element')) {
-      const savedLang = getLanguageFromCookie();
-      if (savedLang && savedLang !== 'en') {
-        setTimeout(() => {
-        const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-        if (selectField && selectField.value !== savedLang) {
-          selectField.value = savedLang;
-          const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-          selectField.dispatchEvent(changeEvent);
-          
-          // Force reload to ensure translation is applied
-          setTimeout(() => {
-            window.location.reload();
-          }, 300);
-        }
-        }, 500);
-      }
+    if (window.google?.translate && document.getElementById('google_translate_element')) {
+      applySavedLanguage();
       resolve();
       return;
     }
 
+    // Set up initialization callback
     window.googleTranslateElementInit = (): void => {
-      // Wait a bit for the API to be fully ready
       const tryInitialize = () => {
-        if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+        if (window.google?.translate?.TranslateElement) {
           try {
             initializeGoogleTranslate({
               elementId: 'google_translate_element',
-              pageLanguage: 'en',
-              // Explicitly include Eritrean Tigrinya (ti)
-              // Google Translate will use context to prefer Eritrean variant
+              pageLanguage: PAGE_LANGUAGE,
               includedLanguages: 'en,sv,ti',
             });
             
-            // Apply saved language from cookie after initialization
-            const savedLang = getLanguageFromCookie();
-            if (savedLang && savedLang !== 'en') {
-              // Wait for Google Translate to be fully ready, then apply translation
-              const applyTranslation = () => {
-                const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-                if (selectField) {
-                  // Set the value and trigger change
-                  selectField.value = savedLang;
-                  
-                  // Create and dispatch a proper change event
-                  const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                  selectField.dispatchEvent(changeEvent);
-                  
-                  // Also try to trigger translation by clicking if needed
-                  setTimeout(() => {
-                    // Force a page refresh to ensure translation is applied
-                    if (selectField.value === savedLang) {
-                      console.log('Applied saved language from cookie:', savedLang);
-                      // The cookie is already set, so reload should apply translation
-                      window.location.reload();
-                    }
-                  }, 500);
-                } else {
-                  // Retry if select field not ready yet
-                  setTimeout(applyTranslation, 200);
-                }
-              };
-              
-              // Start applying translation after a short delay
-              setTimeout(applyTranslation, 1500);
-            }
+            // Apply saved language after initialization
+            applySavedLanguage();
             
             resolve();
           } catch (error) {
             reject(error);
           }
         } else {
-          // Retry after a short delay
+          // Retry after short delay
           setTimeout(tryInitialize, 100);
         }
       };
       
-      // Start initialization attempt
       tryInitialize();
     };
 
@@ -226,12 +334,11 @@ export const initializeWithStandardGoogleScript = (): Promise<void> => {
     if (document.querySelector('script[src*="translate.google.com"]')) {
       let resolved = false;
       let attempts = 0;
-      const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+      const maxAttempts = 50;
       
-      // Wait for API to be fully ready
       const checkAndInit = () => {
         attempts++;
-        if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+        if (window.google?.translate?.TranslateElement) {
           if (!resolved) {
             resolved = true;
             window.googleTranslateElementInit?.();
@@ -243,207 +350,109 @@ export const initializeWithStandardGoogleScript = (): Promise<void> => {
           reject(new Error('Google Translate API not available after timeout'));
         }
       };
+      
       checkAndInit();
     } else {
+      // Load the script
       const script = document.createElement('script');
-      // Use the standard Google Translate script with callback
-      // This ensures proper initialization for Eritrean Tigrinya
       script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       script.async = true;
       script.onerror = () => reject(new Error('Failed to load Google Translate script'));
       document.body.appendChild(script);
     }
   });
-};
+}
 
-// Helper function to get language from cookie
-const getLanguageFromCookie = (): 'en' | 'sv' | 'ti' | null => {
-  if (typeof document === 'undefined') return null;
-  const cookies = document.cookie.split(';');
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.startsWith('googtrans=')) {
-      const value = cookie.substring('googtrans='.length);
-      if (value === '/en/sv') return 'sv';
-      if (value === '/en/ti') return 'ti';
-      // If cookie is empty, deleted, or set to /en/en, it means English (original)
-      if (value === '' || value === '/en' || value === '/en/en') return 'en';
-    }
-  }
-  return null;
-};
-
-// Function to change language programmatically (optimized for Eritrean Tigrinya)
-// Optional callback to save form data before reload
-// Language switching works regardless of user data state
-export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?: () => void): void => {
-  console.log('Attempting to change language to:', languageCode);
+/**
+ * Change language - main entry point
+ * Handles all state synchronization and ensures proper translation
+ */
+export function changeLanguage(
+  languageCode: SupportedLanguage,
+  onBeforeReload?: () => void
+): void {
+  console.log('[GoogleTranslate] Changing language to:', languageCode);
   
-  // Execute callback to save form data before reload (if provided)
-  // This is optional - language switching works even without form data
-  if (onBeforeReload && typeof onBeforeReload === 'function') {
+  // Validate language code
+  if (!SUPPORTED_LANGUAGES.includes(languageCode)) {
+    console.error('[GoogleTranslate] Unsupported language:', languageCode);
+    return;
+  }
+  
+  // Execute callback if provided
+  if (onBeforeReload) {
     try {
       onBeforeReload();
-      console.log('Form data saved before language change');
     } catch (error) {
-      // Don't block language change if form save fails
-      console.warn('Warning: Could not save form data before language change:', error);
-      console.log('Proceeding with language change anyway...');
+      console.warn('[GoogleTranslate] Callback error:', error);
     }
   }
   
-  // For English, we need to completely remove the translation cookie
-  // For other languages, use '/en/{lang}' format
-  const domain = window.location.hostname;
+  // Synchronize state across all storage mechanisms
+  syncLanguageState(languageCode);
   
-  // Set cookie with proper attributes for cross-page persistence
-  // This works regardless of user authentication or data state
-  try {
-    if (languageCode === 'en') {
-      // For English, completely delete the cookie to revert to original content
-      // Delete with all possible paths and domains
-      const paths = ['/', window.location.pathname];
-      const domains = [domain, `.${domain}`, window.location.hostname];
-      
-      paths.forEach(path => {
-        domains.forEach(dom => {
-          // Delete cookie by setting max-age to 0
-          document.cookie = `googtrans=; path=${path}; max-age=0; SameSite=Lax`;
-          if (dom && dom !== 'localhost' && !dom.includes('localhost')) {
-            document.cookie = `googtrans=; path=${path}; domain=${dom}; max-age=0; SameSite=Lax`;
-          }
-        });
-      });
-      
-      // Also try to clear any existing cookies
-      document.cookie = `googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-      if (domain !== 'localhost' && !domain.includes('localhost')) {
-        document.cookie = `googtrans=; path=/; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-        document.cookie = `googtrans=; path=/; domain=.${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-      }
-    } else {
-      // For other languages, use the standard format
-      const cookieValue = `/en/${languageCode}`;
-      document.cookie = `googtrans=${cookieValue}; path=/; max-age=31536000; SameSite=Lax`;
-      
-      if (domain !== 'localhost' && !domain.includes('localhost')) {
-        document.cookie = `googtrans=${cookieValue}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
-        document.cookie = `googtrans=${cookieValue}; path=/; domain=.${domain}; max-age=31536000; SameSite=Lax`;
-      }
-    }
-  } catch (error) {
-    console.warn('Warning: Could not set cookie, but proceeding with language change:', error);
-  }
-  
-  // Store in localStorage for quick access
-  // This works even if user has no account or incomplete data
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem('google_translate_lang', languageCode);
-      // Store metadata for Eritrean Tigrinya
-      if (languageCode === 'ti') {
-        localStorage.setItem('google_translate_variant', 'eritrean');
-      } else if (languageCode === 'en') {
-        // Clear variant when switching to English
-        localStorage.removeItem('google_translate_variant');
-      }
-    } catch (error) {
-      console.warn('Warning: Could not save to localStorage, but proceeding:', error);
-    }
-  }
-  
-  // Small delay to ensure form data is saved before reload (if callback provided)
-  const reloadDelay = onBeforeReload ? 300 : 100;
-  
-  // Try to change via select field if available
-  if (window.google && window.google.translate) {
+  // Try to update Google Translate select field if available
+  if (window.google?.translate) {
     const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (selectField) {
       try {
-        // For English, we need to ensure the select field is set correctly
-        // Google Translate uses 'en' as the value for English
-        const selectValue = languageCode === 'en' ? 'en' : languageCode;
-        
-        // For English, we need to explicitly revert the translation
-        if (languageCode === 'en') {
-          // Try to find and click the "Original" option if it exists
-          const originalOption = Array.from(selectField.options).find(opt => 
-            opt.value === 'en' || opt.text.toLowerCase().includes('original') || opt.text.toLowerCase().includes('english')
-          );
-          
-          if (originalOption) {
-            selectField.value = originalOption.value;
-          } else {
-            selectField.value = 'en';
-          }
-        } else {
-          selectField.value = selectValue;
-        }
-        
-        // Trigger change event to update Google Translate
+        selectField.value = languageCode;
         const changeEvent = new Event('change', { bubbles: true, cancelable: true });
         selectField.dispatchEvent(changeEvent);
-        
-        // For English, also try to trigger a page refresh to clear translation
-        if (languageCode === 'en') {
-          // Force a reload to clear any cached translation
-          console.log('Switching back to original English content - forcing page reload');
-        } else {
-          console.log('Language changed via select field to:', languageCode);
-          if (languageCode === 'ti') {
-            console.log('Eritrean Tigrinya translation activated');
-          }
-        }
-        
-        // For non-English languages, wait a bit then reload to apply translation
-        // For English, reload immediately to clear translation
-        setTimeout(() => {
-          if (languageCode === 'en') {
-            // Hard reload for English to clear translation
-            window.location.href = window.location.href.split('?')[0] + '?lang=en&_=' + Date.now();
-          } else {
-            // Regular reload for other languages
-            window.location.reload();
-          }
-        }, reloadDelay);
-        return;
       } catch (error) {
-        console.warn('Warning: Could not change via select field, using page reload:', error);
+        console.warn('[GoogleTranslate] Could not update select field:', error);
       }
     }
   }
   
-  console.log('Reloading page to apply language change to:', languageCode);
+  // Reload page to apply changes
+  const reloadDelay = onBeforeReload ? 300 : 100;
   
-  // For English, use a hard reload to clear any cached translations
-  if (languageCode === 'en') {
-    setTimeout(() => {
-      // Force a hard reload by adding a cache-busting parameter
-      window.location.href = window.location.href.split('?')[0] + '?lang=en&_=' + Date.now();
-    }, reloadDelay);
-  } else {
-    setTimeout(() => {
+  setTimeout(() => {
+    if (languageCode === 'en') {
+      // Hard reload for English to clear translation cache
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', 'en');
+      url.searchParams.set('_', Date.now().toString());
+      window.location.href = url.toString();
+    } else {
+      // Regular reload for other languages
       window.location.reload();
-    }, reloadDelay);
-  }
-};
+    }
+  }, reloadDelay);
+}
 
-// Function to get current language
-export const getCurrentLanguage = (): 'en' | 'sv' | 'ti' | null => {
-  const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-  const lang = selectField?.value;
-  if (lang === 'en' || lang === 'sv' || lang === 'ti') {
-    return lang;
+/**
+ * Restore saved language from localStorage
+ * Called before Google Translate initializes
+ */
+export function restoreSavedLanguage(): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const savedLang = localStorage.getItem(STORAGE_KEY) as SupportedLanguage | null;
+    
+    if (savedLang && SUPPORTED_LANGUAGES.includes(savedLang)) {
+      // Sync state (sets cookie before GT loads)
+      syncLanguageState(savedLang);
+      console.log('[GoogleTranslate] Restored language:', savedLang);
+    } else {
+      // No saved language, ensure English state
+      syncLanguageState('en');
+    }
+  } catch (error) {
+    console.warn('[GoogleTranslate] Failed to restore language:', error);
+    // Fallback: ensure English state
+    syncLanguageState('en');
   }
-  return null;
-};
+}
 
-// Language details helper (optimized for Eritrean Tigrinya)
+/**
+ * Language details
+ */
 export const languageDetails = {
   en: { code: 'en', name: 'English', nativeName: 'English' },
   sv: { code: 'sv', name: 'Swedish', nativeName: 'Svenska' },
-  // Eritrean Tigrinya: Uses Ge'ez script (Ethiopic script)
-  // The 'ti' code is ISO 639-1 for Tigrinya, Google Translate handles Eritrean variant
   ti: { 
     code: 'ti', 
     name: 'Tigrinya (Eritrean)', 
@@ -453,63 +462,9 @@ export const languageDetails = {
   },
 } as const;
 
-// Function to translate specific text programmatically (optimized for Eritrean Tigrinya)
-export const translateText = async (text: string, targetLang: 'en' | 'sv' | 'ti'): Promise<string> => {
-  if (!window.translateAPI) {
-    console.warn('Translate API not available for direct text translation');
-    return text;
-  }
-  try {
-    // For Eritrean Tigrinya, ensure proper language code
-    const langCode = targetLang === 'ti' ? 'ti' : targetLang;
-    const result = await window.translateAPI.translate(text, { 
-      to: langCode,
-      // Add hints for better Eritrean Tigrinya translation quality
-      ...(targetLang === 'ti' && { 
-        // Google Translate will use context to prefer Eritrean variant
-        source: 'en' // Assuming source is English
-      })
-    });
-    return result.text;
-  } catch (error) {
-    console.error('Translation error:', error);
-    return text;
-  }
-};
-
-// Helper function to detect if user prefers Eritrean Tigrinya
-export const isEritreanTigrinyaPreferred = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  // Check localStorage
-  const savedLang = localStorage.getItem('google_translate_lang');
-  const variant = localStorage.getItem('google_translate_variant');
-  
-  if (savedLang === 'ti' && variant === 'eritrean') {
-    return true;
-  }
-  
-  // Check cookie
-  const lang = getLanguageFromCookie();
-  if (lang === 'ti') {
-    return true;
-  }
-  
-  // Check browser language preferences
-  if (typeof navigator !== 'undefined' && navigator.language) {
-    const browserLang = navigator.language.toLowerCase();
-    // Check for Tigrinya or Eritrean locale indicators
-    if (browserLang.includes('ti') || browserLang.includes('er')) {
-      return true;
-    }
-  }
-  
-  return false;
-};
-
-// Helper function to check if a language is supported
-export const isLanguageSupported = (languageCode: string): languageCode is 'en' | 'sv' | 'ti' => {
-  return ['en', 'sv', 'ti'].includes(languageCode);
-};
-
-
+/**
+ * Check if language is supported
+ */
+export function isLanguageSupported(languageCode: string): languageCode is SupportedLanguage {
+  return SUPPORTED_LANGUAGES.includes(languageCode as SupportedLanguage);
+}

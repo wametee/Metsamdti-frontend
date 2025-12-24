@@ -1,55 +1,44 @@
+/**
+ * GoogleTranslateToggle Component
+ * Production-ready language switcher with stable state management
+ */
+
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { changeLanguage, languageDetails } from '@/lib/services/googleTranslateService';
+import { 
+  changeLanguage, 
+  getCurrentLanguage,
+  languageDetails 
+} from '@/lib/services/googleTranslateService';
 import { FiGlobe } from 'react-icons/fi';
 
 export default function GoogleTranslateToggle() {
-  const [currentLang, setCurrentLang] = useState<'en' | 'sv' | 'ti'>('en'); // Default to 'en' for SSR
+  const [currentLang, setCurrentLang] = useState<'en' | 'sv' | 'ti'>('en');
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize from localStorage or cookie on client side only
+  // Initialize current language from multiple sources
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    const getInitialLanguage = (): 'en' | 'sv' | 'ti' => {
-      const saved = localStorage.getItem('google_translate_lang') as 'en' | 'sv' | 'ti' | null;
-      if (saved && ['en', 'sv', 'ti'].includes(saved)) {
-        return saved;
-      }
-      const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
-        cookie = cookie.trim();
-        if (cookie.startsWith('googtrans=')) {
-          const value = cookie.substring('googtrans='.length);
-          if (value === '/en/sv') return 'sv';
-          if (value === '/en/ti') return 'ti';
-          if (value === '' || value === '/en') return 'en';
-        }
-      }
-      return 'en';
-    };
-    setCurrentLang(getInitialLanguage());
+    // Get language from the most authoritative source
+    const lang = getCurrentLanguage();
+    setCurrentLang(lang);
   }, []);
 
-  // Monitor Google Translate's internal select element for language changes
+  // Monitor Google Translate select field for changes
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const updateCurrentLang = () => {
-      const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-      if (selectField && selectField.value) {
-        const lang = selectField.value as 'en' | 'sv' | 'ti';
-        if (['en', 'sv', 'ti'].includes(lang)) {
-          setCurrentLang(lang);
-        }
+      const lang = getCurrentLanguage();
+      if (lang !== currentLang) {
+        setCurrentLang(lang);
       }
     };
 
-    // Check periodically for the select field
-    const interval = setInterval(() => {
-      updateCurrentLang();
-    }, 500);
+    // Check periodically
+    const interval = setInterval(updateCurrentLang, 1000);
 
     // Also listen for changes on the select field
     const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
@@ -63,7 +52,7 @@ export default function GoogleTranslateToggle() {
         selectField.removeEventListener('change', updateCurrentLang);
       }
     };
-  }, []);
+  }, [currentLang]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -83,6 +72,11 @@ export default function GoogleTranslateToggle() {
   }, [open]);
 
   const handleLanguageChange = (lang: 'en' | 'sv' | 'ti') => {
+    if (lang === currentLang) {
+      setOpen(false);
+      return; // Already selected
+    }
+    
     setCurrentLang(lang);
     setOpen(false);
     changeLanguage(lang);
@@ -135,6 +129,3 @@ export default function GoogleTranslateToggle() {
     </div>
   );
 }
-
-
-
