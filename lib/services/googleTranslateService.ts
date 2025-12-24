@@ -218,7 +218,8 @@ const getLanguageFromCookie = (): 'en' | 'sv' | 'ti' | null => {
       const value = cookie.substring('googtrans='.length);
       if (value === '/en/sv') return 'sv';
       if (value === '/en/ti') return 'ti';
-      if (value === '' || value === '/en') return 'en';
+      // If cookie is empty, deleted, or set to /en/en, it means English (original)
+      if (value === '' || value === '/en' || value === '/en/en') return 'en';
     }
   }
   return null;
@@ -243,7 +244,7 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
     }
   }
   
-  // For English, we need to clear the translation cookie completely
+  // For English, we need to completely remove the translation cookie
   // For other languages, use '/en/{lang}' format
   const domain = window.location.hostname;
   
@@ -251,14 +252,26 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
   // This works regardless of user authentication or data state
   try {
     if (languageCode === 'en') {
-      // For English, delete the cookie by setting it to expire in the past
-      // Also set it to empty to clear any translation
-      document.cookie = `googtrans=; path=/; max-age=0; SameSite=Lax`;
-      document.cookie = `googtrans=/en/en; path=/; max-age=31536000; SameSite=Lax`;
+      // For English, completely delete the cookie to revert to original content
+      // Delete with all possible paths and domains
+      const paths = ['/', window.location.pathname];
+      const domains = [domain, `.${domain}`, window.location.hostname];
       
+      paths.forEach(path => {
+        domains.forEach(dom => {
+          // Delete cookie by setting max-age to 0
+          document.cookie = `googtrans=; path=${path}; max-age=0; SameSite=Lax`;
+          if (dom && dom !== 'localhost' && !dom.includes('localhost')) {
+            document.cookie = `googtrans=; path=${path}; domain=${dom}; max-age=0; SameSite=Lax`;
+          }
+        });
+      });
+      
+      // Also try to clear any existing cookies
+      document.cookie = `googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
       if (domain !== 'localhost' && !domain.includes('localhost')) {
-        document.cookie = `googtrans=; path=/; domain=${domain}; max-age=0; SameSite=Lax`;
-        document.cookie = `googtrans=/en/en; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
+        document.cookie = `googtrans=; path=/; domain=${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+        document.cookie = `googtrans=; path=/; domain=.${domain}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
       }
     } else {
       // For other languages, use the standard format
@@ -267,6 +280,7 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
       
       if (domain !== 'localhost' && !domain.includes('localhost')) {
         document.cookie = `googtrans=${cookieValue}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
+        document.cookie = `googtrans=${cookieValue}; path=/; domain=.${domain}; max-age=31536000; SameSite=Lax`;
       }
     }
   } catch (error) {
@@ -301,17 +315,36 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
         // For English, we need to ensure the select field is set correctly
         // Google Translate uses 'en' as the value for English
         const selectValue = languageCode === 'en' ? 'en' : languageCode;
-        selectField.value = selectValue;
+        
+        // For English, we need to explicitly revert the translation
+        if (languageCode === 'en') {
+          // Try to find and click the "Original" option if it exists
+          const originalOption = Array.from(selectField.options).find(opt => 
+            opt.value === 'en' || opt.text.toLowerCase().includes('original') || opt.text.toLowerCase().includes('english')
+          );
+          
+          if (originalOption) {
+            selectField.value = originalOption.value;
+          } else {
+            selectField.value = 'en';
+          }
+        } else {
+          selectField.value = selectValue;
+        }
         
         // Trigger change event to update Google Translate
         const changeEvent = new Event('change', { bubbles: true, cancelable: true });
         selectField.dispatchEvent(changeEvent);
         
-        console.log('Language changed via select field to:', languageCode);
+        // For English, also try to trigger a page refresh to clear translation
         if (languageCode === 'en') {
-          console.log('Switching back to original English content');
-        } else if (languageCode === 'ti') {
-          console.log('Eritrean Tigrinya translation activated');
+          // Force a reload to clear any cached translation
+          console.log('Switching back to original English content - forcing page reload');
+        } else {
+          console.log('Language changed via select field to:', languageCode);
+          if (languageCode === 'ti') {
+            console.log('Eritrean Tigrinya translation activated');
+          }
         }
         
         setTimeout(() => {
@@ -325,9 +358,18 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
   }
   
   console.log('Reloading page to apply language change to:', languageCode);
-  setTimeout(() => {
-    window.location.reload();
-  }, reloadDelay);
+  
+  // For English, use a hard reload to clear any cached translations
+  if (languageCode === 'en') {
+    setTimeout(() => {
+      // Force a hard reload by adding a cache-busting parameter
+      window.location.href = window.location.href.split('?')[0] + '?lang=en&_=' + Date.now();
+    }, reloadDelay);
+  } else {
+    setTimeout(() => {
+      window.location.reload();
+    }, reloadDelay);
+  }
 };
 
 // Function to get current language
