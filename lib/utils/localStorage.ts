@@ -31,6 +31,7 @@ export interface OnboardingData {
   // Background Series Four
   previouslyMarried?: boolean;
   hasChildren?: boolean;
+  preferNotToSay?: boolean;
 
   // Background Series Five
   openToPartnerWithChildren?: boolean;

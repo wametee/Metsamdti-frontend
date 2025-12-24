@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+export const dynamic = 'force-dynamic';
+
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -63,6 +65,14 @@ export default function GoogleCallbackPage() {
         <p className="mt-4 text-[#491A26]">Completing sign in...</p>
       </div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GoogleCallbackPageContent />
+    </Suspense>
   );
 }
 

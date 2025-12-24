@@ -17,7 +17,6 @@ export default function ToasterWrapper() {
       pauseOnHover
       theme="light"
       toastClassName="rounded-md"
-      bodyClassName="text-sm font-regular"
     />
   );
 }

@@ -64,7 +64,7 @@ export default function BackgroundSeriesFour() {
     // If preferNotToSay is true, send false for hasChildren (backend expects boolean)
     handleSubmit({ 
       previouslyMarried, 
-      hasChildren: preferNotToSay ? false : hasChildren 
+      hasChildren: preferNotToSay ? false : (hasChildren ?? false)
     }, e);
   };
 

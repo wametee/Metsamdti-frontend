@@ -431,7 +431,7 @@ export default function Signup() {
     // After verification, complete the signup
     // The email is now verified in the backend, so completeApplication will succeed
     if (pendingSignupData && userId) {
-      mutation.mutate(); // This will now succeed since email is verified
+      mutation.mutate(undefined); // This will now succeed since email is verified
     }
   };
 

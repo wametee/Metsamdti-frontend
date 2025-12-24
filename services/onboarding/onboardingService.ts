@@ -103,6 +103,7 @@ export interface CompleteApplicationRequest {
   password: string;
   phone?: string;
   phone_country_code?: string;
+  verificationCode?: string;
 }
 
 export interface OnboardingResponse {
@@ -110,6 +111,7 @@ export interface OnboardingResponse {
   message?: string;
   data?: any;
   userId?: string; // Changed from sessionId to userId
+  isNewUser?: boolean;
 }
 
 class OnboardingService {
@@ -118,7 +120,7 @@ class OnboardingService {
    * For authenticated users: returns their existing userId
    * For anonymous users: creates a new user record and returns userId
    */
-  async initializeOnboarding(): Promise<{ success: boolean; userId?: string; message?: string }> {
+  async initializeOnboarding(): Promise<{ success: boolean; userId?: string; message?: string; isNewUser?: boolean }> {
     try {
       // Check if user is authenticated
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
@@ -662,6 +664,7 @@ class OnboardingService {
           password: data.password, // Backend will handle encryption
           phone: data.phone,
           phone_country_code: data.phone_country_code,
+          verificationCode: data.verificationCode, // Include verification code if provided
         },
         {
           headers: {

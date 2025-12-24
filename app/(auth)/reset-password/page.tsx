@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight, FiLock } from "react-icons/fi";
@@ -14,7 +16,7 @@ import { validatePassword, showValidationError, validationMessages } from '@/lib
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 
-export default function ResetPassword() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
@@ -381,6 +383,14 @@ export default function ResetPassword() {
         By continuing, you agree to our Terms of Service and Privacy Policy.
       </p>
     </section>
+  );
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
 

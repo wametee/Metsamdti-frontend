@@ -7,7 +7,7 @@ import Image from "next/image";
 import { IoMdAdd } from "react-icons/io";
 import logo from "@/assets/logo2.png";
 import upload from "@/assets/upload.png";
-import onboardingService from "@/lib/services/onboardingService";
+import { onboardingService } from "@/services";
 import { useOnboardingSession } from "@/hooks/useOnboardingSession";
 import { saveOnboardingData, getOnboardingData, updateOnboardingProgress } from "@/lib/utils/localStorage";
 import { useMutation } from "@tanstack/react-query";
@@ -72,13 +72,22 @@ export default function Basics() {
         photos: photoPreviews,
       });
 
+      // Get userId from localStorage (should be set during onboarding initialization)
+      const userId = typeof window !== "undefined" 
+        ? localStorage.getItem("onboarding_user_id") || sessionId
+        : sessionId;
+      
+      if (!userId) {
+        throw new Error("User ID not available. Please refresh the page.");
+      }
+
       // Submit to backend
       const result = await onboardingService.submitBasics({
-        displayName,
+        username: displayName || fullName, // Use displayName as username, fallback to fullName
         fullName,
         age: typeof age === "number" ? age : 0,
         photos: photos.length > 0 ? photos : undefined,
-      });
+      }, userId);
 
       if (!result.success) {
         throw new Error(result.message || "Failed to submit");

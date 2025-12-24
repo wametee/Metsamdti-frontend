@@ -3,7 +3,7 @@ export interface GoogleTranslateOptions {
   elementId: string;
   pageLanguage: string;
   includedLanguages: string;
-  layout?: google.translate.TranslateElement.InlineLayout;
+  layout?: number; // InlineLayout is a value object, use number for the layout value
   autoDisplay?: boolean;
   multilanguagePage?: boolean;
 }
@@ -19,12 +19,13 @@ declare global {
           options: {
             pageLanguage: string;
             includedLanguages: string;
-            layout?: google.translate.TranslateElement.InlineLayout;
+            layout?: number;
             autoDisplay?: boolean;
             multilanguagePage?: boolean;
           },
           elementId: string
         ) => void;
+      } & {
         TranslateElement: {
           InlineLayout: {
             SIMPLE: number;
@@ -37,27 +38,6 @@ declare global {
     translateAPI?: {
       translate: (text: string, options: { to: string }) => Promise<{ text: string }>;
     };
-  }
-  namespace google {
-    namespace translate {
-      class TranslateElement {
-        constructor(
-          options: {
-            pageLanguage: string;
-            includedLanguages: string;
-            layout?: TranslateElement.InlineLayout;
-            autoDisplay?: boolean;
-            multilanguagePage?: boolean;
-          },
-          elementId: string
-        );
-        static InlineLayout: {
-          SIMPLE: number;
-          HORIZONTAL: number;
-          VERTICAL: number;
-        };
-      }
-    }
   }
 }
 
@@ -92,7 +72,7 @@ export const initializeGoogleTranslate = (options: Partial<GoogleTranslateOption
   }
 
   // Get layout - use SIMPLE (0) as default if InlineLayout is not available
-  let layout: google.translate.TranslateElement.InlineLayout = 0; // SIMPLE = 0
+  let layout: number = 0; // SIMPLE = 0
   if (window.google.translate.TranslateElement.InlineLayout) {
     layout = window.google.translate.TranslateElement.InlineLayout.SIMPLE;
   }
@@ -206,7 +186,7 @@ export const initializeWithStandardGoogleScript = (): Promise<void> => {
         if (window.google && window.google.translate && window.google.translate.TranslateElement) {
           if (!resolved) {
             resolved = true;
-            window.googleTranslateElementInit();
+            window.googleTranslateElementInit?.();
           }
         } else if (attempts < maxAttempts) {
           setTimeout(checkAndInit, 100);
