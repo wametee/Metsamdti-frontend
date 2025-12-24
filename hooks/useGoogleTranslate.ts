@@ -30,17 +30,33 @@ export const useGoogleTranslate = (options: UseGoogleTranslateOptions = {}) => {
       const savedLang = localStorage.getItem('google_translate_lang') as 'en' | 'sv' | 'ti' | null;
       const variant = localStorage.getItem('google_translate_variant');
       
-      if (savedLang && ['en', 'sv', 'ti'].includes(savedLang) && savedLang !== 'en') {
-        const cookieValue = `/en/${savedLang}`;
-        try {
-          document.cookie = `googtrans=${cookieValue}; path=/; max-age=31536000; SameSite=Lax`;
-          console.log('Restored language from localStorage:', savedLang);
-          if (savedLang === 'ti' && variant === 'eritrean') {
-            console.log('Eritrean Tigrinya preference detected and restored');
+      if (savedLang && ['en', 'sv', 'ti'].includes(savedLang)) {
+        if (savedLang === 'en') {
+          // For English, clear the cookie
+          try {
+            document.cookie = `googtrans=; path=/; max-age=0; SameSite=Lax`;
+            document.cookie = `googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+          } catch (error) {
+            console.warn('Could not clear language cookie:', error);
           }
-        } catch (error) {
-          // Cookie setting might fail in some contexts, but that's okay
-          console.warn('Could not set language cookie, but language preference is saved:', error);
+        } else {
+          // For other languages, set the translation cookie
+          const cookieValue = `/en/${savedLang}`;
+          const domain = window.location.hostname;
+          try {
+            document.cookie = `googtrans=${cookieValue}; path=/; max-age=31536000; SameSite=Lax`;
+            if (domain !== 'localhost' && !domain.includes('localhost')) {
+              document.cookie = `googtrans=${cookieValue}; path=/; domain=${domain}; max-age=31536000; SameSite=Lax`;
+              document.cookie = `googtrans=${cookieValue}; path=/; domain=.${domain}; max-age=31536000; SameSite=Lax`;
+            }
+            console.log('Restored language from localStorage:', savedLang);
+            if (savedLang === 'ti' && variant === 'eritrean') {
+              console.log('Eritrean Tigrinya preference detected and restored');
+            }
+          } catch (error) {
+            // Cookie setting might fail in some contexts, but that's okay
+            console.warn('Could not set language cookie, but language preference is saved:', error);
+          }
         }
       }
     } catch (error) {

@@ -109,6 +109,29 @@ export const initializeGoogleTranslate = (options: Partial<GoogleTranslateOption
     );
     console.log('Google Translate initialized with languages:', defaultOptions.includedLanguages);
     console.log('Eritrean Tigrinya (ti) is configured and ready');
+    
+    // After initialization, check if we need to apply a saved language
+    // This ensures translations are applied even if the cookie was set before GT loaded
+    const savedLang = getLanguageFromCookie();
+    if (savedLang && savedLang !== 'en') {
+      // Wait a bit for Google Translate to be fully ready
+      setTimeout(() => {
+        const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        if (selectField && selectField.value !== savedLang) {
+          selectField.value = savedLang;
+          const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+          selectField.dispatchEvent(changeEvent);
+          
+          // Force a small delay then reload to ensure translation is applied
+          setTimeout(() => {
+            if (selectField.value === savedLang) {
+              console.log('Forcing page reload to apply translation for:', savedLang);
+              window.location.reload();
+            }
+          }, 500);
+        }
+      }, 2000);
+    }
   } catch (error) {
     console.error('Error initializing Google Translate:', error);
   }
@@ -122,11 +145,17 @@ export const initializeWithStandardGoogleScript = (): Promise<void> => {
       const savedLang = getLanguageFromCookie();
       if (savedLang && savedLang !== 'en') {
         setTimeout(() => {
-          const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-          if (selectField && selectField.value !== savedLang) {
-            selectField.value = savedLang;
-            selectField.dispatchEvent(new Event('change', { bubbles: true }));
-          }
+        const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        if (selectField && selectField.value !== savedLang) {
+          selectField.value = savedLang;
+          const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+          selectField.dispatchEvent(changeEvent);
+          
+          // Force reload to ensure translation is applied
+          setTimeout(() => {
+            window.location.reload();
+          }, 300);
+        }
         }, 500);
       }
       resolve();
@@ -149,15 +178,34 @@ export const initializeWithStandardGoogleScript = (): Promise<void> => {
             // Apply saved language from cookie after initialization
             const savedLang = getLanguageFromCookie();
             if (savedLang && savedLang !== 'en') {
-              setTimeout(() => {
+              // Wait for Google Translate to be fully ready, then apply translation
+              const applyTranslation = () => {
                 const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
                 if (selectField) {
+                  // Set the value and trigger change
                   selectField.value = savedLang;
+                  
+                  // Create and dispatch a proper change event
                   const changeEvent = new Event('change', { bubbles: true, cancelable: true });
                   selectField.dispatchEvent(changeEvent);
-                  console.log('Applied saved language from cookie:', savedLang);
+                  
+                  // Also try to trigger translation by clicking if needed
+                  setTimeout(() => {
+                    // Force a page refresh to ensure translation is applied
+                    if (selectField.value === savedLang) {
+                      console.log('Applied saved language from cookie:', savedLang);
+                      // The cookie is already set, so reload should apply translation
+                      window.location.reload();
+                    }
+                  }, 500);
+                } else {
+                  // Retry if select field not ready yet
+                  setTimeout(applyTranslation, 200);
                 }
-              }, 1000);
+              };
+              
+              // Start applying translation after a short delay
+              setTimeout(applyTranslation, 1500);
             }
             
             resolve();
@@ -347,8 +395,16 @@ export const changeLanguage = (languageCode: 'en' | 'sv' | 'ti', onBeforeReload?
           }
         }
         
+        // For non-English languages, wait a bit then reload to apply translation
+        // For English, reload immediately to clear translation
         setTimeout(() => {
-          window.location.reload();
+          if (languageCode === 'en') {
+            // Hard reload for English to clear translation
+            window.location.href = window.location.href.split('?')[0] + '?lang=en&_=' + Date.now();
+          } else {
+            // Regular reload for other languages
+            window.location.reload();
+          }
         }, reloadDelay);
         return;
       } catch (error) {
