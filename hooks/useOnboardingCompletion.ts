@@ -24,25 +24,69 @@ interface OnboardingCompletionStatus {
  * before they can access signup to create their account.
  */
 export function useOnboardingCompletion(): OnboardingCompletionStatus {
-  const [status, setStatus] = useState<OnboardingCompletionStatus>({
-    isComplete: false,
-    isLoading: true,
-    currentStep: null,
-    userId: null,
-    error: null,
-  });
+  // Initialize with immediate check if in browser
+  const getInitialStatus = (): OnboardingCompletionStatus => {
+    if (typeof window === 'undefined') {
+      return {
+        isComplete: false,
+        isLoading: true,
+        currentStep: null,
+        userId: null,
+        error: null,
+      };
+    }
+
+    // Quick check: if no userId, fail immediately
+    const userId = localStorage.getItem('onboarding_user_id');
+    if (!userId) {
+      return {
+        isComplete: false,
+        isLoading: false,
+        currentStep: null,
+        userId: null,
+        error: 'No onboarding session found. Please start by accepting terms.',
+      };
+    }
+
+    // Quick check: if no onboarding data, fail immediately
+    const onboardingData = getOnboardingData();
+    if (!onboardingData) {
+      return {
+        isComplete: false,
+        isLoading: false,
+        currentStep: null,
+        userId,
+        error: 'No onboarding data found. Please complete the onboarding process.',
+      };
+    }
+
+    // If we have data, we need to validate it (will be done in useEffect)
+    return {
+      isComplete: false,
+      isLoading: true,
+      currentStep: null,
+      userId,
+      error: null,
+    };
+  };
+
+  const [status, setStatus] = useState<OnboardingCompletionStatus>(getInitialStatus);
 
   useEffect(() => {
     let isMounted = true;
 
     const checkOnboardingStatus = () => {
+      // Check immediately if we're in browser
+      if (typeof window === 'undefined') {
+        return;
+      }
+
       try {
         // Get userId from localStorage (from onboarding)
-        const userId = typeof window !== 'undefined' 
-          ? localStorage.getItem('onboarding_user_id') 
-          : null;
+        const userId = localStorage.getItem('onboarding_user_id');
 
         if (!userId) {
+          // Fail fast - no userId means no onboarding started
           if (isMounted) {
             setStatus({
               isComplete: false,
@@ -59,6 +103,7 @@ export function useOnboardingCompletion(): OnboardingCompletionStatus {
         const onboardingData = getOnboardingData();
 
         if (!onboardingData) {
+          // Fail fast - no data means onboarding not started
           if (isMounted) {
             setStatus({
               isComplete: false,

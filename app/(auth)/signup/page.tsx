@@ -23,15 +23,17 @@ export default function Signup() {
   const userId = useOnboardingUser();
   const { isComplete, isLoading, error } = useOnboardingCompletion();
 
-  // Protect route: redirect if onboarding is not complete
+  // Protect route: redirect immediately if onboarding is not complete
   useEffect(() => {
-    if (!isLoading && !isComplete) {
-      toast.error('Please complete all onboarding steps before signing up.', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-      // Redirect to welcome page to start onboarding
-      router.push('/onboarding/welcome');
+    if (!isLoading) {
+      if (!isComplete) {
+        // Use replace instead of push to prevent back button navigation
+        router.replace('/onboarding/welcome');
+        toast.error('Please complete all onboarding steps before signing up.', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      }
     }
   }, [isLoading, isComplete, router]);
 
@@ -461,9 +463,17 @@ export default function Signup() {
     );
   }
 
-  // Don't render form if onboarding is not complete (will redirect)
+  // Don't render form if onboarding is not complete (redirecting)
+  // This prevents any flash of content before redirect
   if (!isComplete) {
-    return null;
+    return (
+      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#702C3E] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#491A26]">Redirecting to onboarding...</p>
+        </div>
+      </section>
+    );
   }
 
   return (
