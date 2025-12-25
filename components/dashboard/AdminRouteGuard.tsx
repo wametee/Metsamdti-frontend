@@ -31,10 +31,11 @@ export default function AdminRouteGuard({
   useEffect(() => {
     if (!isLoading && isAuthenticated && role) {
       // Check if user has required admin role
+      // superAdmin always has access
+      // admin has access if 'admin' is in allowedRoles
       const hasAdminAccess = 
         role === 'superAdmin' || 
-        (role === 'admin' && allowedRoles.includes('admin')) ||
-        allowedRoles.includes(role);
+        (role === 'admin' && allowedRoles.includes('admin'));
 
       if (!hasAdminAccess) {
         // Redirect to dashboard (user will see user dashboard)
@@ -60,10 +61,11 @@ export default function AdminRouteGuard({
     return null;
   }
 
+  // superAdmin always has access
+  // admin has access if 'admin' is in allowedRoles
   const hasAdminAccess = 
     role === 'superAdmin' || 
-    (role === 'admin' && allowedRoles.includes('admin')) ||
-    allowedRoles.includes(role);
+    (role === 'admin' && allowedRoles.includes('admin'));
 
   if (!hasAdminAccess) {
     return null; // Will redirect via useEffect

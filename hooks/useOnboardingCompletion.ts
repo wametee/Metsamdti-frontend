@@ -149,21 +149,23 @@ export function useOnboardingCompletion(): OnboardingCompletionStatus {
                                 !!onboardingData.valuedRelationship;
 
         // All steps must be completed
-        const isComplete = hasBasics &&
-                         hasBackgroundOne &&
-                         hasBackgroundTwo &&
-                         hasBackgroundThree &&
-                         hasBackgroundFour &&
-                         hasBackgroundFive &&
-                         hasBackgroundSix &&
-                         hasBackgroundSeven &&
-                         hasBackgroundEight &&
-                         hasBackgroundNine &&
-                         hasEmotionalOne &&
-                         hasEmotionalTwo &&
-                         hasEmotionalThree &&
-                         hasEmotionalFour &&
-                         hasEmotionalFive;
+        const isComplete: boolean = Boolean(
+          hasBasics &&
+          hasBackgroundOne &&
+          hasBackgroundTwo &&
+          hasBackgroundThree &&
+          hasBackgroundFour &&
+          hasBackgroundFive &&
+          hasBackgroundSix &&
+          hasBackgroundSeven &&
+          hasBackgroundEight &&
+          hasBackgroundNine &&
+          hasEmotionalOne &&
+          hasEmotionalTwo &&
+          hasEmotionalThree &&
+          hasEmotionalFour &&
+          hasEmotionalFive
+        );
 
         if (isMounted) {
           setStatus({
