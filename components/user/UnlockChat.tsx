@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import love from "@/assets/love3.png";
@@ -9,6 +10,8 @@ import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 // replace with: import matchIllustration from "@/assets/match-illustration.png";
 
 export default function UnlockChat() {
+  const router = useRouter();
+  
   // Initialize Google Translate
   useGoogleTranslate({
     onInitialized: () => {
@@ -56,6 +59,7 @@ export default function UnlockChat() {
 
         {/* CTA */}
         <button
+          onClick={() => router.push("/payment")}
           className="flex items-center justify-center gap-2 bg-[#702C3E] text-white px-10 py-3 rounded-md text-sm font-semibold hover:bg-[#702C3E]/90 transition"
         >
           Unlock Chat

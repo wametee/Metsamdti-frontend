@@ -1,4 +1,5 @@
 import httpClient from "@/lib/httpClient";
+import { storeLoginTimestamp, clearLoginTimestamp } from "@/lib/utils/authUtils";
 
 /**
  * Auth Service
@@ -36,6 +37,8 @@ class AuthService {
       // Store token if provided
       if (response.data.token && typeof window !== "undefined") {
         localStorage.setItem("auth_token", response.data.token);
+        // Store login timestamp for 24-hour auto-logout
+        storeLoginTimestamp();
       }
 
       return {
@@ -61,6 +64,8 @@ class AuthService {
       // Store token if provided
       if (response.data.token && typeof window !== "undefined") {
         localStorage.setItem("auth_token", response.data.token);
+        // Store login timestamp for 24-hour auto-logout
+        storeLoginTimestamp();
       }
 
       return {
@@ -82,6 +87,8 @@ class AuthService {
   logout(): void {
     if (typeof window !== "undefined") {
       localStorage.removeItem("auth_token");
+      // Clear login timestamp
+      clearLoginTimestamp();
     }
   }
 
@@ -111,58 +118,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Google OAuth login/signup
-   */
-  async googleAuth(idToken: string): Promise<AuthResponse> {
-    try {
-      const response = await httpClient.post("/auth/google", { idToken });
-      
-      // Store token if provided
-      if (response.data.token && typeof window !== "undefined") {
-        localStorage.setItem("auth_token", response.data.token);
-      }
-
-      const isNewUser = response.data.isNewUser === true;
-      
-      console.log('[AuthService] Google auth response:', {
-        hasToken: !!response.data.token,
-        hasUser: !!response.data.user,
-        isNewUser: response.data.isNewUser,
-        isNewUserStrict: isNewUser,
-      });
-
-      return {
-        success: true,
-        token: response.data.token,
-        user: response.data.user,
-        isNewUser: isNewUser,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.message || "Google authentication failed",
-      };
-    }
-  }
-
-  /**
-   * Get Google OAuth URL
-   */
-  async getGoogleAuthUrl(): Promise<{ success: boolean; authUrl?: string; message?: string }> {
-    try {
-      const response = await httpClient.get("/auth/google/url");
-      return {
-        success: true,
-        authUrl: response.data.authUrl,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.message || "Failed to get Google auth URL",
-      };
-    }
-  }
 
   /**
    * Get current user's profile

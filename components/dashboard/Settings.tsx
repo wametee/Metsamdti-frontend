@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { useRouter } from "next/navigation";
-import { FaArrowLeft } from "react-icons/fa6";
-import { RiArrowDropDownLine } from "react-icons/ri";
 import Image from "next/image";
-import logo from "@/assets/logo2.png";
 import authService from "@/services/auth/authService";
-import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import httpClient from "@/lib/httpClient";
 import { getImageUrl, isLocalImage, extractStorageInfo, extractStorageKeyFromUrl } from "@/lib/utils/imageUrl";
 import { toast } from "react-toastify";
@@ -103,8 +98,7 @@ const FIELD_OPTIONS: Record<string, string[]> = {
   valued_relationship: ['Stable and harmonious', 'Deep and emotionally rich'],
 };
 
-export default function ProfileView() {
-  const router = useRouter();
+export default function Settings() {
   
   // Initialize Google Translate
   useGoogleTranslate({
@@ -781,69 +775,34 @@ export default function ProfileView() {
 
   if (loading) {
     return (
-      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center justify-center pt-24 pb-10 md:py-20 px-4">
+      <div className="flex-1 p-4 sm:p-6 bg-[#EDD4D3] min-h-full flex items-center justify-center">
         <div className="text-[#702C3E]">Loading profile...</div>
-      </section>
+      </div>
     );
   }
 
   if (error || !profileData) {
     return (
-      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center justify-center pt-24 pb-10 md:py-20 px-4">
+      <div className="flex-1 p-4 sm:p-6 bg-[#EDD4D3] min-h-full flex items-center justify-center">
         <div className="text-red-600">{error || "Profile not found"}</div>
-        <button
-          onClick={() => router.back()}
-          className="mt-4 text-[#702C3E] hover:underline"
-        >
-          Go back
-        </button>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center 
-    pt-24 pb-10 md:py-20 px-4">
+    <div className="flex-1 p-3 sm:p-4 md:p-6 bg-[#EDD4D3] min-h-full overflow-y-auto">
       {/* Hidden Google Translate Element - must exist for translation to work */}
       <div id="google_translate_element" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}></div>
 
-      {/* Header with Profile Name and Language Switcher */}
-      <div className="absolute top-6 right-6 flex items-center gap-4 text-[#702C3E] text-sm z-40">
-        {/* Profile Name Dropdown */}
-        <div className="relative">
-          <button
-            className="flex items-center gap-1 border border-[#E5D5D5] rounded-md px-3 py-1.5 cursor-pointer bg-white/60 hover:bg-white/80 transition"
-          >
-            <span className="font-medium">{displayName}</span>
-            <RiArrowDropDownLine className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Language Switcher */}
-        <LanguageSwitcher />
-      </div>
-
-      {/* Back Button */}
-      <button
-        onClick={() => router.back()}
-        className="absolute left-6 top-6 p-2 rounded-md text-[#702C3E] hover:bg-white/60 z-40"
-      >
-        <FaArrowLeft className="w-5 h-5" />
-      </button>
-
       {/* Outer Card */}
       <div className="
-        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl
+        w-full max-w-3xl md:max-w-4xl lg:max-w-1xl mx-auto
         bg-[#EDD4D3] 
         border-2 border-white 
         rounded-2xl 
-        py-10 px-6 md:px-20
+        py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-12 lg:px-20
         shadow-md 
       ">
-        {/* Logo */}
-        <div className="flex items-center justify-center mb-6">
-          <Image src={logo} alt="Logo" className="w-14 opacity-90" />
-        </div>
 
         {/* Title and Edit Button */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -879,10 +838,10 @@ export default function ProfileView() {
         </div>
 
         {/* Profile Photos Section */}
-        <div className="w-full mb-8">
-          <h3 className="text-xl font-semibold text-[#702C3E] mb-4">Photos</h3>
+        <div className="w-full mb-6 sm:mb-8">
+          <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4">Photos</h3>
           {isEditing ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 max-w-2xl mx-auto px-2 md:px-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 max-w-2xl mx-auto px-2 md:px-0">
               {Array.from({ length: 5 }).map((_, slotIndex) => {
                 // Get the photo at this slot position
                 const photoUrl = photoPreviews[slotIndex];
@@ -975,11 +934,11 @@ export default function ProfileView() {
         </div>
 
         {/* Profile Sections */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Basic Information */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Basic Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <EditableField
                 label="Full Name"
                 field="full_name"
@@ -1047,9 +1006,9 @@ export default function ProfileView() {
           </div>
 
           {/* Education & Career */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Education & Career</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Education & Career</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <EditableField
                 label="Education"
                 field="education"
@@ -1069,9 +1028,9 @@ export default function ProfileView() {
           </div>
 
           {/* Relationship Status */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Relationship Status</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Relationship Status</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <EditableField
                 label="Marital History"
                 field="previously_married"
@@ -1105,9 +1064,9 @@ export default function ProfileView() {
           </div>
 
           {/* Relationship Preferences */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Relationship Preferences</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Relationship Preferences</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {isEditing ? (
                 <>
                   <div className="flex flex-col gap-1">
@@ -1164,9 +1123,9 @@ export default function ProfileView() {
           </div>
 
           {/* Lifestyle & Values */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Lifestyle & Values</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Lifestyle & Values</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <EditableField
                 label="Weekend Activities"
                 field="weekend_activities"
@@ -1214,9 +1173,9 @@ export default function ProfileView() {
           </div>
 
           {/* Faith & Beliefs */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Faith & Beliefs</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Faith & Beliefs</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <EditableField
                 label="Faith Importance"
                 field="faith_importance"
@@ -1237,9 +1196,9 @@ export default function ProfileView() {
           </div>
 
           {/* Personal Insights */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-            <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Personal Insights</h3>
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+            <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Personal Insights</h3>
+            <div className="space-y-3 sm:space-y-4">
               <EditableField
                 label="One Thing to Understand About Me"
                 field="one_thing_to_understand"
@@ -1280,14 +1239,14 @@ export default function ProfileView() {
             profileData.communication_style ||
             profileData.life_approach ||
             profileData.valued_relationship) ? (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-              <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Emotional & Personality Evaluation</h3>
-              <div className="space-y-6">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+              <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Emotional & Personality Evaluation</h3>
+              <div className="space-y-4 sm:space-y-6">
                 {/* Emotional Series One */}
                 {(isEditing || profileData.emotional_balance || profileData.conflict_emotional_response || profileData.decision_making_guide) && (
                   <div>
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Emotional Balance & Decision Making</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       <EditableField
                         label="When emotions feel heavy, how do you naturally find your balance?"
                         field="emotional_balance"
@@ -1320,7 +1279,7 @@ export default function ProfileView() {
                 {(isEditing || profileData.preferred_emotional_energy || profileData.feels_loved || profileData.deep_connection) && (
                   <div>
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Emotional Energy & Connection</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       <EditableField
                         label="What kind of emotional energy do you feel most at peace with?"
                         field="preferred_emotional_energy"
@@ -1353,7 +1312,7 @@ export default function ProfileView() {
                 {(isEditing || profileData.confidence_moments || profileData.show_love) && (
                   <div>
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Confidence & Love Expression</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       <EditableField
                         label="When do you feel most confident in yourself?"
                         field="confidence_moments"
@@ -1378,7 +1337,7 @@ export default function ProfileView() {
                 {(isEditing || profileData.disagreement_response || profileData.loved_one_upset_response || profileData.refill_emotional_energy) && (
                   <div>
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Conflict & Emotional Recovery</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       <EditableField
                         label="When someone disagrees with you, what happens inside you?"
                         field="disagreement_response"
@@ -1411,7 +1370,7 @@ export default function ProfileView() {
                 {(isEditing || profileData.communication_style || profileData.life_approach || profileData.valued_relationship) && (
                   <div>
                     <h4 className="text-base font-semibold text-[#702C3E] mb-3">Communication & Relationship Values</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       <EditableField
                         label="What communication style feels safest to your heart?"
                         field="communication_style"
@@ -1442,9 +1401,9 @@ export default function ProfileView() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-[#E4D6D6]">
-              <h3 className="text-xl font-semibold text-[#702C3E] mb-4 pb-2 border-b border-[#E4D6D6]">Emotional & Personality Evaluation</h3>
-              <div className="text-center py-8">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-[#E4D6D6]">
+              <h3 className="text-lg sm:text-xl font-semibold text-[#702C3E] mb-3 sm:mb-4 pb-2 border-b border-[#E4D6D6]">Emotional & Personality Evaluation</h3>
+              <div className="text-center py-6 sm:py-8">
                 <p className="text-[#6B5B5B] text-base">Emotional evaluation data is not yet available.</p>
                 <p className="text-[#6B5B5B] text-sm mt-2">Complete the emotional series questionnaires to see your evaluation here.</p>
               </div>
@@ -1452,11 +1411,6 @@ export default function ProfileView() {
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      <p className="text-center text-xs text-[#6B5B5B] mt-6">
-        By continuing, you agree to our Terms of Service and Privacy Policy.
-      </p>
-    </section>
+    </div>
   );
 }

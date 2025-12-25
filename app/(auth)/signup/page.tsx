@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -10,6 +10,7 @@ import Image from "next/image";
 import logo from "@/assets/logo2.png";
 import { onboardingService } from '@/services';
 import { useOnboardingUser } from '@/hooks/useOnboardingUser';
+import { useOnboardingCompletion } from '@/hooks/useOnboardingCompletion';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from "react-toastify";
 import { validateEmail, validatePassword, showValidationError, validationMessages } from '@/lib/utils/validation';
@@ -20,6 +21,19 @@ import EmailVerificationModal from '@/components/auth/EmailVerificationModal';
 export default function Signup() {
   const router = useRouter();
   const userId = useOnboardingUser();
+  const { isComplete, isLoading, error } = useOnboardingCompletion();
+
+  // Protect route: redirect if onboarding is not complete
+  useEffect(() => {
+    if (!isLoading && !isComplete) {
+      toast.error('Please complete all onboarding steps before signing up.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      // Redirect to welcome page to start onboarding
+      router.push('/onboarding/welcome');
+    }
+  }, [isLoading, isComplete, router]);
 
   const [email, setEmail] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1"); // Default to US
@@ -434,6 +448,23 @@ export default function Signup() {
       mutation.mutate(undefined); // This will now succeed since email is verified
     }
   };
+
+  // Show loading state while checking onboarding completion
+  if (isLoading) {
+    return (
+      <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#702C3E] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#491A26]">Checking onboarding status...</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Don't render form if onboarding is not complete (will redirect)
+  if (!isComplete) {
+    return null;
+  }
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">

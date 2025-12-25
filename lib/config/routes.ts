@@ -9,8 +9,6 @@ export const PUBLIC_ROUTES = [
   "/signup",
   "/forgot-password",
   "/reset-password",
-  "/auth/google/callback",
-  "/google-phone",
 ] as const;
 
 export const PUBLIC_ROUTE_PREFIXES = [
@@ -18,7 +16,6 @@ export const PUBLIC_ROUTE_PREFIXES = [
 ] as const;
 
 export const PUBLIC_API_ENDPOINTS = [
-  "/auth/google",
   "/auth/login",
   "/auth/signup",
   "/onboarding/",

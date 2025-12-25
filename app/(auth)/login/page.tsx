@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FiArrowUpRight } from "react-icons/fi";
@@ -13,9 +13,18 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from "react-toastify";
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 
 export default function Login() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuthStatus();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,15 +60,17 @@ export default function Login() {
 
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       // Show success toast
       toast.success("Login successful! Redirecting...", {
         position: "top-right",
         autoClose: 2000,
       });
-      // Redirect to match-time page after successful login
+      
+      // Get user role from login response to determine redirect
+      // All authenticated users go to dashboard (role-based content handled in dashboard)
       setTimeout(() => {
-        router.push('/match-time');
+        router.push('/dashboard');
       }, 500);
     },
     onError: (error: any) => {
@@ -89,6 +100,23 @@ export default function Login() {
     e.preventDefault();
     mutation.mutate();
   };
+
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#EDD4D3]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#702C3E] mx-auto"></div>
+          <p className="mt-4 text-[#491A26]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render login form if already authenticated (redirect will happen)
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <section className="min-h-screen w-full bg-[#EDD4D3] relative flex flex-col items-center pt-24 pb-10 md:py-20 px-4">

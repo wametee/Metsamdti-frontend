@@ -1,16 +1,34 @@
 // components/Header.tsx
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FaArrowRightLong } from "react-icons/fa6";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { MdCancel } from "react-icons/md";
+import { FiLogOut, FiUser } from "react-icons/fi";
 import logo from '@/assets/logo2.png';
 import Image from 'next/image';
 import Link from 'next/link';
 import GoogleTranslateToggle from '@/components/layout/GoogleTranslateToggle';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { authService } from '@/services';
+import { toast } from 'react-toastify';
 
 export default function Header() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const { isAuthenticated, isLoading, user } = useAuthStatus();
+
+  const handleLogout = () => {
+    authService.logout();
+    toast.success("Logged out successfully", {
+      position: "top-right",
+      autoClose: 2000,
+    });
+    router.push('/');
+    // Refresh the page to update auth status
+    window.location.reload();
+  };
   
   useEffect(() => {
     const handleResize = () => {
@@ -52,15 +70,43 @@ export default function Header() {
               <GoogleTranslateToggle />
             </div>
 
-            {/* Get Started visible on md+ */}
-            <div className="hidden md:block">
-              <Link href="/onboarding/welcome" aria-label="Get Started">
-                <button className="flex items-center gap-2 bg-[#702C3E] text-[F1F1F1] px-4 py-2 rounded-sm font-regular group">
-                  Get Started
-                  <FaArrowRightLong className="w-4 h-4 -mr-1 transform rotate-0 transition-transform duration-200 group-hover:-rotate-45 group-hover:-translate-y-1 group-hover:translate-x-1" />
-                </button>
-              </Link>
-            </div>
+            {/* Actions visible on md+ */}
+            {!isLoading && (
+              <div className="hidden md:flex items-center gap-3">
+                {isAuthenticated ? (
+                  <>
+                    <Link href="/dashboard" aria-label="Dashboard">
+                      <button className="flex items-center gap-2 bg-[#702C3E] text-white px-4 py-2 rounded-sm font-regular hover:bg-[#5E2333] transition-colors">
+                        <FiUser className="w-4 h-4" />
+                        Dashboard
+                      </button>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      aria-label="Logout"
+                      className="flex items-center gap-2 text-[#702C3E] hover:text-[#5E2333] px-3 py-2 rounded-sm font-regular transition-colors"
+                    >
+                      <FiLogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" aria-label="Sign In">
+                      <span className="text-[#702C3E] hover:text-[#5E2333] px-4 py-2 rounded-sm font-regular transition-colors cursor-pointer">
+                        Sign In
+                      </span>
+                    </Link>
+                    <Link href="/onboarding/welcome" aria-label="Get Started">
+                      <button className="flex items-center gap-2 bg-[#702C3E] text-[F1F1F1] px-4 py-2 rounded-sm font-regular group">
+                        Get Started
+                        <FaArrowRightLong className="w-4 h-4 -mr-1 transform rotate-0 transition-transform duration-200 group-hover:-rotate-45 group-hover:-translate-y-1 group-hover:translate-x-1" />
+                      </button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Hamburger for small screens */}
             <div className="md:hidden">
@@ -96,12 +142,43 @@ export default function Header() {
             <GoogleTranslateToggle />
           </div>
           
-          <Link href="/onboarding/welcome" aria-label="Get Started">
-            <button className="flex items-center gap-2 bg-[#702C3E] text-white px-4 py-2 rounded-sm font-medium group">
-              Get Started
-              <FaArrowRightLong className="w-4 h-4 -mr-1 transform rotate-0 transition-transform duration-200 group-hover:-rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1" />
-            </button>
-          </Link>
+          {/* Actions in Mobile Menu */}
+          {!isLoading && (
+            <div className="pt-2 border-t border-gray-200 space-y-3">
+              {isAuthenticated ? (
+                <>
+                  <Link href="/dashboard" aria-label="Dashboard">
+                    <button className="w-full flex items-center justify-center gap-2 bg-[#702C3E] text-white px-4 py-2 rounded-sm font-medium">
+                      <FiUser className="w-4 h-4" />
+                      Dashboard
+                    </button>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    aria-label="Logout"
+                    className="w-full flex items-center justify-center gap-2 text-[#702C3E] hover:text-[#5E2333] px-4 py-2 rounded-sm font-medium transition-colors"
+                  >
+                    <FiLogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" aria-label="Sign In">
+                    <span className="block w-full text-[#702C3E] hover:text-[#5E2333] px-4 py-2 rounded-sm font-medium transition-colors text-center cursor-pointer">
+                      Sign In
+                    </span>
+                  </Link>
+                  <Link href="/onboarding/welcome" aria-label="Get Started">
+                    <button className="w-full flex items-center justify-center gap-2 bg-[#702C3E] text-white px-4 py-2 rounded-sm font-medium group">
+                      Get Started
+                      <FaArrowRightLong className="w-4 h-4 -mr-1 transform rotate-0 transition-transform duration-200 group-hover:-rotate-45 group-hover:-translate-x-1 group-hover:-translate-y-1" />
+                    </button>
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </nav>
       </div>
 

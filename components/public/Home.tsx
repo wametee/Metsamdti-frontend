@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Image from 'next/image';
 import Footer from '@/components/layout/Footer';
@@ -7,8 +9,12 @@ import Hero from "@/assets/hero.jpg"
 import Jebena from "@/assets/Jebena.jpeg"
 import { FiArrowUpRight, GiJourney, GiMeditation, GiLovers, AiFillCaretLeft } from '@/lib/icons';
 import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 
 export default function Home() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuthStatus();
+
   const { isLoaded } = useGoogleTranslate({
     onInitialized: () => {
       console.log('Google Translate ready on home page');
@@ -18,6 +24,13 @@ export default function Home() {
     },
   });
 
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
   const questions = [
     'Are you tired of casual dating and ready for something real?',
     'Do you long for security and meaning in your relationships?',
@@ -25,6 +38,23 @@ export default function Home() {
     'Do you want a relationship guided by shared values and purpose?',
     'Are you ready to begin a new chapter with clarity and intention?'
   ];
+
+  // Show loading state while checking auth (prevents flash of content)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#EDD4D3]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#702C3E] mx-auto"></div>
+          <p className="mt-4 text-[#491A26]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render home page if user is authenticated (redirect will happen)
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <>

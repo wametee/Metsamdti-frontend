@@ -26,6 +26,7 @@ export default function EmailVerificationModal({
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [codeSent, setCodeSent] = useState(false); // Track if code has been sent
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Countdown timer for resend
@@ -36,39 +37,62 @@ export default function EmailVerificationModal({
     }
   }, [countdown]);
 
-  // Auto-focus first input when modal opens
+  // Reset state when modal opens/closes
   useEffect(() => {
-    if (isOpen && inputRefs.current[0]) {
+    if (isOpen) {
+      // Reset state when modal opens
+      setCode(['', '', '', '', '', '']);
+      setCodeSent(false);
+      setCountdown(0);
+    }
+  }, [isOpen]);
+
+  // Auto-focus first input when code input is shown
+  useEffect(() => {
+    if (isOpen && codeSent && inputRefs.current[0]) {
       setTimeout(() => {
         inputRefs.current[0]?.focus();
       }, 100);
     }
-  }, [isOpen]);
-
-  // Send verification code when modal opens
-  useEffect(() => {
-    if (isOpen && email && userId) {
-      sendVerificationCode();
-    }
-  }, [isOpen, email, userId]);
+  }, [isOpen, codeSent]);
 
   const sendVerificationCode = async () => {
+    setIsResending(true);
     try {
       const response = await httpClient.post('/verification/send', {
         userId,
         email,
       });
       setCountdown(60); // 60 second cooldown
+      setCodeSent(true); // Mark that code has been sent
       
-      toast.info('Verification code sent to your email', {
+      toast.success('Verification code sent! Please check your email.', {
         position: 'top-right',
-        autoClose: 3000,
+        autoClose: 4000,
       });
+      
+      // Auto-focus first input after code is sent
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 100);
     } catch (error: any) {
       console.error('Error sending verification code:', error);
-      toast.error(error.response?.data?.message || 'Failed to send verification code', {
+      const errorMessage = error.response?.data?.message || 'Failed to send verification code';
+      
+      // User-friendly error messages
+      let displayMessage = errorMessage;
+      if (errorMessage.includes('Too many')) {
+        displayMessage = 'You\'ve requested too many codes. Please wait a few minutes before trying again.';
+      } else if (errorMessage.includes('wait')) {
+        displayMessage = errorMessage; // Keep the wait time message
+      }
+      
+      toast.error(displayMessage, {
         position: 'top-right',
+        autoClose: 6000,
       });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -162,6 +186,7 @@ export default function EmailVerificationModal({
         email,
       });
       setCountdown(60);
+      setCodeSent(true); // Ensure code sent state is true
       toast.success('Verification code resent successfully', {
         position: 'top-right',
         autoClose: 3000,
@@ -198,106 +223,172 @@ export default function EmailVerificationModal({
           <div className="flex justify-center mb-4">
             <Image src={logo} alt="Metsamdti Logo" className="w-16 opacity-95" />
           </div>
-          <h2 className="text-2xl font-semibold text-white mb-2">Verify Your Email</h2>
-          <p className="text-sm text-[#F6E7EA]">
-            We've sent a verification code to
-          </p>
-          <p className="text-sm font-medium text-white mt-1">{email}</p>
+          <h2 className="text-2xl font-semibold text-white mb-2">
+            {codeSent ? 'Verify Your Email' : 'Email Verification Required'}
+          </h2>
+          {codeSent ? (
+            <>
+              <p className="text-sm text-[#F6E7EA]">
+                We've sent a verification code to
+              </p>
+              <p className="text-sm font-medium text-white mt-1">{email}</p>
+            </>
+          ) : (
+            <p className="text-sm text-[#F6E7EA]">
+              Please verify your email address to continue
+            </p>
+          )}
         </div>
 
         {/* Body */}
         <div className="px-6 py-8">
-          {/* Individual Code Input Boxes */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-[#491A26] mb-4 text-center">
-              Or enter digit by digit
-            </label>
-            <div className="flex gap-3 justify-center">
-              {code.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => { inputRefs.current[index] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleCodeChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  className="
-                    w-12 h-14
-                    text-center text-2xl font-bold
-                    text-black
-                    bg-[#F6E7EA] border-2 border-[#E4D6D6]
-                    rounded-lg
-                    focus:border-[#702C3E] focus:outline-none
-                    transition-colors
-                  "
-                />
-              ))}
+          {/* Send Code Button - Only show if code hasn't been sent yet */}
+          {!codeSent && (
+            <div className="mb-6 text-center">
+              <div className="mb-4">
+                <p className="text-sm text-[#491A26] font-medium mb-2">
+                  Verify Your Email Address
+                </p>
+                <p className="text-sm text-[#6B5B5B] leading-relaxed">
+                  To complete your registration and secure your account, we need to verify your email address. 
+                  Click the button below to receive your verification code.
+                </p>
+              </div>
+              <button
+                onClick={sendVerificationCode}
+                disabled={isResending}
+                className="
+                  w-full bg-[#702C3E] text-white
+                  py-3 rounded-lg
+                  font-semibold
+                  hover:bg-[#5E2333] transition
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  flex items-center justify-center gap-2
+                "
+              >
+                {isResending ? (
+                  <>
+                    <FiRefreshCw className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <FiMail className="w-5 h-5" />
+                    Send Verification Code
+                  </>
+                )}
+              </button>
+              <p className="text-xs text-[#6B5B5B] mt-3">
+                The code will be sent to <span className="font-medium text-[#491A26]">{email}</span>
+              </p>
             </div>
-          </div>
+          )}
 
-          {/* Verify Button */}
-          <button
-            onClick={handleVerify}
-            disabled={isVerifying || code.join('').length !== 6}
-            className="
-              w-full bg-[#702C3E] text-white
-              py-3 rounded-lg
-              font-semibold
-              hover:bg-[#5E2333] transition
-              disabled:opacity-50 disabled:cursor-not-allowed
-              flex items-center justify-center gap-2
-            "
-          >
-            {isVerifying ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              'Verify Email'
-            )}
-          </button>
+          {/* Code Input and Verify Section - Only show after code is sent */}
+          {codeSent && (
+            <>
+              {/* Individual Code Input Boxes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-[#491A26] mb-2 text-center">
+                  Enter the 6-digit verification code
+                </label>
+                <p className="text-xs text-[#6B5B5B] mb-4 text-center">
+                  We sent a code to <span className="font-medium text-[#491A26]">{email}</span>
+                </p>
+                <div className="flex gap-2 sm:gap-3 justify-center">
+                  {code.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => { inputRefs.current[index] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleCodeChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      onPaste={handlePaste}
+                      className="
+                        w-11 h-12 sm:w-12 sm:h-14
+                        text-center text-xl sm:text-2xl font-bold
+                        text-black
+                        bg-[#F6E7EA] border-2 border-[#E4D6D6]
+                        rounded-lg
+                        focus:border-[#702C3E] focus:outline-none focus:ring-2 focus:ring-[#702C3E]/20
+                        transition-all
+                        disabled:opacity-50
+                      "
+                      aria-label={`Digit ${index + 1} of verification code`}
+                    />
+                  ))}
+                </div>
+              </div>
 
-          {/* Resend Code */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[#6B5B5B] mb-2">
-              Didn't receive the code?
-            </p>
-            <button
-              onClick={handleResend}
-              disabled={isResending || countdown > 0}
-              className="
-                text-[#702C3E] text-sm font-medium
-                hover:underline
-                disabled:opacity-50 disabled:cursor-not-allowed
-                flex items-center justify-center gap-2 mx-auto
-              "
-            >
-              {isResending ? (
-                <>
-                  <FiRefreshCw className="w-4 h-4 animate-spin" />
-                  Sending...
-                </>
-              ) : countdown > 0 ? (
-                `Resend code in ${countdown}s`
-              ) : (
-                <>
-                  <FiMail className="w-4 h-4" />
-                  Resend Code
-                </>
-              )}
-            </button>
-          </div>
+              {/* Verify Button */}
+              <button
+                onClick={handleVerify}
+                disabled={isVerifying || code.join('').length !== 6}
+                className="
+                  w-full bg-[#702C3E] text-white
+                  py-3 rounded-lg
+                  font-semibold
+                  hover:bg-[#5E2333] transition
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  flex items-center justify-center gap-2
+                "
+              >
+                {isVerifying ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  'Verify Email'
+                )}
+              </button>
 
-          {/* Help Text */}
-          <div className="mt-6 p-4 bg-[#F6E7EA] rounded-lg">
-            <p className="text-xs text-[#6B5B5B] text-center">
-              <strong>Tip:</strong> Check your spam folder if you don't see the email. The code expires in 15 minutes.
-            </p>
-          </div>
+              {/* Resend Code */}
+              <div className="mt-6 text-center">
+                <p className="text-sm text-[#6B5B5B] mb-2">
+                  Didn't receive the code?
+                </p>
+                <button
+                  onClick={handleResend}
+                  disabled={isResending || countdown > 0}
+                  className="
+                    text-[#702C3E] text-sm font-medium
+                    hover:underline
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    flex items-center justify-center gap-2 mx-auto
+                  "
+                >
+                  {isResending ? (
+                    <>
+                      <FiRefreshCw className="w-4 h-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : countdown > 0 ? (
+                    `Resend code in ${countdown}s`
+                  ) : (
+                    <>
+                      <FiMail className="w-4 h-4" />
+                      Resend Code
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Help Text - Only show after code is sent */}
+          {codeSent && (
+            <div className="mt-6 p-4 bg-[#F6E7EA] rounded-lg">
+              <p className="text-xs text-[#6B5B5B] text-center leading-relaxed">
+                <strong className="text-[#491A26]">Tip:</strong> Check your spam or junk folder if you don't see the email. 
+                The verification code expires in 15 minutes for your security.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

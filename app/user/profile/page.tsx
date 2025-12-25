@@ -1,7 +1,7 @@
-import ProfileView from "@/components/user/ProfileView";
+import Settings from "@/components/dashboard/Settings";
 
 export default function ProfilePage() {
-  return <ProfileView />;
+  return <Settings />;
 }
 
 

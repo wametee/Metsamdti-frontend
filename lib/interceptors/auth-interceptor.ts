@@ -1,5 +1,6 @@
 import { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from "axios";
 import { shouldRedirectToLogin } from "../config/routes";
+import { storeLoginTimestamp, clearLoginTimestamp } from "../utils/authUtils";
 
 /**
  * Auth Interceptor
@@ -37,6 +38,9 @@ const AuthInterceptor = (httpClient: AxiosInstance) => {
       // Store token from response if provided (e.g., after login/signup)
       if (response.data?.token && typeof window !== "undefined") {
         localStorage.setItem("auth_token", response.data.token);
+        // Store login timestamp for 24-hour auto-logout
+        // Note: This handles tokens from any auth endpoint
+        storeLoginTimestamp();
       }
       return response;
     },
@@ -54,6 +58,8 @@ const AuthInterceptor = (httpClient: AxiosInstance) => {
           if (needsRedirect) {
             // Clear invalid/expired token
             localStorage.removeItem("auth_token");
+            // Clear login timestamp
+            clearLoginTimestamp();
             console.log('[AuthInterceptor] 401 on protected route, redirecting to login', {
               path: currentPath,
               request: requestUrl,
