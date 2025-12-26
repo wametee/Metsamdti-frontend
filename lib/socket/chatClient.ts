@@ -16,37 +16,63 @@ class ChatClient {
    */
   connect(token: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      // If already connected, resolve immediately
       if (this.socket?.connected) {
         resolve();
         return;
       }
 
+      // If already connecting, wait for that connection
       if (this.isConnecting) {
-        // Wait for existing connection attempt
         const checkConnection = setInterval(() => {
           if (this.socket?.connected) {
             clearInterval(checkConnection);
             resolve();
-          } else if (!this.isConnecting) {
+          } else if (!this.isConnecting && !this.socket) {
             clearInterval(checkConnection);
             reject(new Error('Connection failed'));
           }
         }, 100);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          clearInterval(checkConnection);
+          if (!this.socket?.connected) {
+            reject(new Error('Connection timeout'));
+          }
+        }, 10000);
         return;
       }
 
       this.isConnecting = true;
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const socketUrl = apiUrl.replace('/api', '');
+      // Construct socket URL properly
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      
+      // Remove trailing slashes
+      apiUrl = apiUrl.replace(/\/+$/, '');
+      
+      // Remove /api suffix if present (Socket.io connects to root, not /api)
+      if (apiUrl.endsWith('/api')) {
+        apiUrl = apiUrl.slice(0, -4);
+      }
+      
+      // Ensure we have a valid URL
+      if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+        apiUrl = `https://${apiUrl}`;
+      }
 
-      this.socket = io(socketUrl, {
+      console.log('[ChatClient] Connecting to:', apiUrl);
+
+      this.socket = io(apiUrl, {
         auth: { token },
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: this.maxReconnectAttempts,
+        timeout: 20000, // 20 second timeout
+        forceNew: false, // Reuse existing connection if available
       });
 
       this.socket.on('connect', () => {
@@ -68,9 +94,11 @@ class ChatClient {
 
       this.socket.on('disconnect', (reason) => {
         console.log('[ChatClient] Disconnected:', reason);
-        if (reason === 'io server disconnect') {
-          // Server disconnected, reconnect manually
-          this.socket?.connect();
+        // Don't manually reconnect - let Socket.io handle it automatically
+        // Manual reconnection can cause loops
+        if (reason === 'io client disconnect') {
+          // Client intentionally disconnected, don't reconnect
+          this.isConnecting = false;
         }
       });
 
@@ -85,7 +113,9 @@ class ChatClient {
    */
   disconnect() {
     if (this.socket) {
+      // Disconnect without reconnection
       this.socket.disconnect();
+      this.socket.removeAllListeners();
       this.socket = null;
       this.isConnecting = false;
       this.reconnectAttempts = 0;
@@ -241,4 +271,6 @@ class ChatClient {
 }
 
 export default new ChatClient();
+
+
 

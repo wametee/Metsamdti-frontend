@@ -24,34 +24,48 @@ export default function Chats() {
   const messageInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
+  const socketConnectedRef = useRef(false);
+  const userIdRef = useRef<string | null>(null);
 
-  // Connect to Socket.io on mount
+  // Connect to Socket.io on mount (only once per user)
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    
+    // If already connected for this user, don't reconnect
+    if (socketConnectedRef.current && userIdRef.current === user.id && chatClient.isConnected()) {
+      return;
+    }
 
     const connectSocket = async () => {
       try {
         const token = localStorage.getItem('auth_token');
-        if (token) {
+        if (token && !chatClient.isConnected()) {
           await chatClient.connect(token);
           console.log('[Chats] Socket connected');
+          socketConnectedRef.current = true;
+          userIdRef.current = user.id || null;
         }
       } catch (error) {
         console.error('[Chats] Failed to connect socket:', error);
-        toast.error('Failed to connect to chat server');
+        socketConnectedRef.current = false;
+        // Don't show error toast on every failed attempt, only on first failure
+        if (!socketConnectedRef.current) {
+          toast.error('Failed to connect to chat server. Chat features may be limited.');
+        }
       }
     };
 
     connectSocket();
 
     return () => {
-      chatClient.disconnect();
+      // Only disconnect on unmount, not on every re-render
+      // The socket client handles reconnection automatically
     };
-  }, [user]);
+  }, [user?.id]); // Use user.id instead of user object
 
   // Load chat rooms
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const loadChatRooms = async () => {
       setLoading(true);
@@ -80,18 +94,15 @@ export default function Chats() {
     };
 
     loadChatRooms();
-  }, [user, searchParams]);
+  }, [user?.id, searchParams]); // Use user.id instead of user object
 
   // Join room and load messages when selected
   useEffect(() => {
-    if (!selectedRoom || !chatClient.isConnected()) return;
+    if (!selectedRoom) return;
 
     const loadRoomMessages = async () => {
       try {
-        // Join the room via Socket.io
-        chatClient.joinRoom(selectedRoom.id);
-
-        // Load message history
+        // Load message history (works even without socket connection)
         const result = await getMessages(selectedRoom.id, 50);
         if (result.success && result.messages) {
           setMessages(result.messages);
@@ -103,6 +114,11 @@ export default function Chats() {
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
+
+        // Join the room via Socket.io if connected (for real-time updates)
+        if (chatClient.isConnected()) {
+          chatClient.joinRoom(selectedRoom.id);
+        }
       } catch (error) {
         console.error('[Chats] Error loading messages:', error);
       }
@@ -110,52 +126,61 @@ export default function Chats() {
 
     loadRoomMessages();
 
-    // Set up Socket.io listeners
-    const unsubscribeMessage = chatClient.onMessage((data) => {
-      if (data.roomId === selectedRoom.id) {
-        setMessages(prev => [...prev, data.message]);
-        // Mark as read if user is viewing
-        markMessagesAsRead(selectedRoom.id);
-        chatClient.markAsRead(selectedRoom.id);
-        // Scroll to bottom
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    });
+    // Set up Socket.io listeners (only if socket is connected)
+    let unsubscribeMessage = () => {};
+    let unsubscribeHistory = () => {};
+    let unsubscribeTyping = () => {};
+    let unsubscribeError = () => {};
 
-    const unsubscribeHistory = chatClient.onMessageHistory((data) => {
-      if (data.roomId === selectedRoom.id) {
-        setMessages(data.messages);
-      }
-    });
-
-    const unsubscribeTyping = chatClient.onTyping((data) => {
-      if (data.roomId === selectedRoom.id && data.userId !== user?.id) {
-        if (data.isTyping) {
-          setTypingUsers(prev => new Set(prev).add(data.userId));
-        } else {
-          setTypingUsers(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(data.userId);
-            return newSet;
-          });
+    if (chatClient.isConnected()) {
+      unsubscribeMessage = chatClient.onMessage((data) => {
+        if (data.roomId === selectedRoom.id) {
+          setMessages(prev => [...prev, data.message]);
+          // Mark as read if user is viewing
+          markMessagesAsRead(selectedRoom.id);
+          chatClient.markAsRead(selectedRoom.id);
+          // Scroll to bottom
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
         }
-      }
-    });
+      });
 
-    const unsubscribeError = chatClient.onError((error) => {
-      toast.error(error.message);
-    });
+      unsubscribeHistory = chatClient.onMessageHistory((data) => {
+        if (data.roomId === selectedRoom.id) {
+          setMessages(data.messages);
+        }
+      });
+
+      unsubscribeTyping = chatClient.onTyping((data) => {
+        if (data.roomId === selectedRoom.id && data.userId !== user?.id) {
+          if (data.isTyping) {
+            setTypingUsers(prev => new Set(prev).add(data.userId));
+          } else {
+            setTypingUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(data.userId);
+              return newSet;
+            });
+          }
+        }
+      });
+
+      unsubscribeError = chatClient.onError((error) => {
+        toast.error(error.message);
+      });
+    }
 
     return () => {
-      chatClient.leaveRoom(selectedRoom.id);
+      if (chatClient.isConnected()) {
+        chatClient.leaveRoom(selectedRoom.id);
+      }
       unsubscribeMessage();
       unsubscribeHistory();
       unsubscribeTyping();
       unsubscribeError();
     };
-  }, [selectedRoom, user]);
+  }, [selectedRoom, user?.id]); // Use user.id instead of user object
 
   // Handle sending message
   const handleSendMessage = useCallback(async () => {
