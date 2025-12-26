@@ -46,7 +46,7 @@ export default function ForgotPassword() {
       }
 
       // Call password reset API
-      const response = await httpClient.post('/password-reset/send', { email });
+      const response = await httpClient.post('/auth/password-reset/send', { email });
       
       if (!response.data.success) {
         const errorMsg = response.data.message || 'Failed to send reset code';

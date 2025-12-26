@@ -21,8 +21,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     
     const saved = localStorage.getItem('google_translate_lang') as Language | null;
     if (saved && ['en', 'ti', 'sv'].includes(saved)) {
-      setLanguage(saved);
-    }
+          setLanguage(saved);
+        }
   }, []);
 
   const changeLanguage = (lang: Language) => {

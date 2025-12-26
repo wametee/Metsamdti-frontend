@@ -84,7 +84,7 @@ export default function AcceptMatch({ onReject, onAccept }: AcceptMatchProps) {
 
       {/* INFO CARD */}
       <div className="w-full max-w-md bg-[#F4EAEA] rounded-lg px-4 py-4 mb-8 text-left">
-        <p className="text-base text-[#491A26] font-semibold mb-1">
+        <p className="text-base text-[#702C3E] font-semibold mb-1">
           Age: 30
         </p>
         <p className="text-sm text-[#5A4A4A] leading-relaxed font-medium">
@@ -130,5 +130,10 @@ export default function AcceptMatch({ onReject, onAccept }: AcceptMatchProps) {
     </div>
   );
 }
+
+
+
+
+
 
 

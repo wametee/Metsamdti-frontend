@@ -87,8 +87,8 @@ export default function DashboardHeader() {
           className="object-contain w-8 h-8 sm:w-10 sm:h-10" 
         />
         <div className="flex flex-col">
-          <span className="text-xs sm:text-sm font-semibold text-[#491A26]">Metsamdti</span>
-          <span className="text-[10px] sm:text-xs text-[#5A4A4A] hidden xs:block">PARTNER FOR LIFE</span>
+          <span className="text-xs sm:text-sm font-semibold text-[#702C3E]">Metsamdti</span>
+          <span className="text-[10px] sm:text-xs text-[#5A4A4A] font-medium hidden xs:block">PARTNER FOR LIFE</span>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export default function DashboardHeader() {
             className="flex items-center gap-1 border border-[#E5D5D5] rounded-md px-2 sm:px-3 py-1.5 cursor-pointer bg-white/60 hover:bg-white/80 transition text-[#702C3E] text-xs sm:text-sm"
             aria-label="User menu"
           >
-            <span className="font-medium truncate max-w-[60px] sm:max-w-none">{loading ? "..." : userName}</span>
+            <span className="font-medium truncate max-w-[60px] sm:max-w-none text-sm">{loading ? "..." : userName}</span>
             <RiArrowDropDownLine className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           </button>
 
@@ -120,7 +120,7 @@ export default function DashboardHeader() {
                   handleLogout();
                   setUserDropdownOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 hover:bg-[#F6E7EA] transition-colors rounded-md text-gray-700 text-sm"
+                className="w-full text-left px-4 py-2 hover:bg-[#F6E7EA] transition-colors rounded-md text-[#2F2E2E] text-sm font-medium"
               >
                 Logout
               </button>

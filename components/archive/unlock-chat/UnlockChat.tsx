@@ -4,11 +4,22 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FiArrowUpRight } from "react-icons/fi";
 import love from "@/assets/love3.png";
-import UserHeader from "./UserHeader";
+import UserHeader from "@/components/user/UserHeader";
 import { useGoogleTranslate } from '@/hooks/useGoogleTranslate';
 // matchIllustration asset is missing in the repo. Use logo as a placeholder
 // replace with: import matchIllustration from "@/assets/match-illustration.png";
 
+/**
+ * UnlockChat Component
+ * 
+ * This component was archived for future use when payment integration is implemented.
+ * It displays a page prompting users to make a payment to unlock chat functionality.
+ * 
+ * To restore:
+ * 1. Move this file back to components/user/UnlockChat.tsx
+ * 2. Restore the unlock-chat page from app/archive/unlock-chat/page.tsx
+ * 3. Update payment flow to integrate with this component
+ */
 export default function UnlockChat() {
   const router = useRouter();
   

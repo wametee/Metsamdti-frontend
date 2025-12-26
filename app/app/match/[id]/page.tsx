@@ -32,10 +32,10 @@ export default function MatchPage({ params }: { params: { id: string } }) {
           Admin note: Why we think you're a good match...
         </p>
         <a
-          href={`/app/match/${params.id}/unlock`}
+          href={`/dashboard/chats?match=${params.id}`}
           className="block w-full bg-blue-600 text-white py-3 rounded-lg text-center font-medium hover:bg-blue-700"
         >
-          Unlock Chat
+          Start Chat
         </a>
       </div>
     </main>

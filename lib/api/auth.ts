@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import httpClient from "@/lib/httpClient/index";
 
 export interface LoginInput {
   email: string;
@@ -46,5 +47,42 @@ export async function acceptTerms() {
     method: "POST",
   });
   return response.json();
+}
+
+export interface UserDashboardStats {
+  myMatches: number;
+  activeChats: number;
+  totalSpent: number;
+  thisMonthSpent: number;
+  profileViews: number;
+  pendingMatches: number;
+  acceptedMatches: number;
+  rejectedMatches: number;
+  photos: number;
+  profileCompletion: number;
+  profileStatus: string;
+  lastMatchDate: string | null;
+  lastMessageDate: string | null;
+  profileUpdatedDate: string | null;
+}
+
+export interface UserDashboardStatsResponse {
+  success: boolean;
+  stats: UserDashboardStats | null;
+  error?: string;
+}
+
+export async function getUserDashboardStats(): Promise<UserDashboardStatsResponse> {
+  try {
+    const response = await httpClient.get<UserDashboardStatsResponse>('/auth/dashboard/stats');
+    return response.data;
+  } catch (error: any) {
+    console.error('[AuthAPI] Error fetching user dashboard stats:', error);
+    return {
+      success: false,
+      stats: null,
+      error: error.message || 'Failed to fetch dashboard statistics',
+    };
+  }
 }
 

@@ -92,7 +92,7 @@ function ResetPasswordContent() {
 
     setIsResending(true);
     try {
-      const response = await httpClient.post('/password-reset/resend', { email });
+      const response = await httpClient.post('/auth/password-reset/resend', { email });
       if (response.data.success) {
         setCountdown(60);
         toast.success('Reset code resent successfully', {
@@ -151,7 +151,7 @@ function ResetPasswordContent() {
       }
 
       // Call reset password API
-      const response = await httpClient.post('/password-reset/reset', {
+      const response = await httpClient.post('/auth/password-reset/reset', {
         email,
         code: verificationCode,
         newPassword,

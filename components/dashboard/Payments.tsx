@@ -49,7 +49,7 @@ export default function Payments() {
   return (
     <div className="flex-1 p-4 sm:p-6 bg-[#EDD4D3] min-h-full overflow-y-auto">
       {/* Title */}
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#491A26] text-center mb-4 sm:mb-6">
+      <h1 className="text-3xl md:text-4xl font-bold text-[#702C3E] text-center mb-4 sm:mb-6">
         Payment History
       </h1>
 
@@ -71,7 +71,7 @@ export default function Payments() {
               bg-[#F5E5E4]
               border border-[#E6DADA]
               rounded-lg
-              text-sm text-[#491A26]
+              text-sm text-[#702C3E] font-medium
               placeholder-[#8A7A7A]
               focus:outline-none
               focus:ring-2 focus:ring-[#702C3E]/20
@@ -83,8 +83,8 @@ export default function Payments() {
           {/* Total Spent Summary */}
           <div className="max-w-2xl mx-auto mb-4 sm:mb-6 px-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm sm:text-base text-[#491A26]">Total Spent</span>
-              <span className="text-lg sm:text-xl font-bold text-[#491A26]">${totalSpent}</span>
+              <span className="text-sm sm:text-base text-[#702C3E] font-medium">Total Spent</span>
+              <span className="text-lg sm:text-xl font-bold text-[#702C3E]">${totalSpent}</span>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ export default function Payments() {
               {/* Match */}
               <div>
                 <span className="text-sm text-[#5A4A4A] block mb-1">Match</span>
-                <span className="text-base font-semibold text-[#491A26]">
+                <span className="text-base font-semibold text-[#702C3E]">
                   {payment.match}
                 </span>
               </div>
@@ -113,7 +113,7 @@ export default function Payments() {
               {/* Amount */}
               <div>
                 <span className="text-sm text-[#5A4A4A] block mb-1">Amount</span>
-                <span className="text-base font-semibold text-[#491A26]">
+                <span className="text-base font-semibold text-[#702C3E]">
                   ${payment.amount}
                 </span>
               </div>
@@ -123,7 +123,7 @@ export default function Payments() {
                 <span className="text-sm text-[#5A4A4A] block mb-1">
                   Date Paid
                 </span>
-                <span className="text-base font-semibold text-[#491A26]">
+                <span className="text-base font-semibold text-[#702C3E]">
                   {payment.datePaid || "-"}
                 </span>
               </div>

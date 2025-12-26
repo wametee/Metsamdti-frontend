@@ -16,8 +16,8 @@ export default function PaymentPage() {
   const handlePay = () => {
     // TODO: Implement payment processing
     console.log("Processing payment...");
-    // After successful payment, navigate to unlock-chat success page
-    router.push("/unlock-chat");
+    // After successful payment, navigate back
+    router.back();
   };
 
   return (
@@ -32,6 +32,11 @@ export default function PaymentPage() {
     </>
   );
 }
+
+
+
+
+
 
 
 

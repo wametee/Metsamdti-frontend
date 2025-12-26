@@ -13,7 +13,7 @@ interface MatchEntry {
   gender: string;
   location: string;
   profileImage: string;
-  status: "Pending" | "Rejected" | "Accepted";
+  status: "Pending" | "Rejected" | "Accepted" | "accepted" | "active";
   dateMatched: string;
 }
 
@@ -52,8 +52,8 @@ export default function History() {
     match.secondaryName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleUnlockChat = (matchId: string) => {
-    router.push("/payment");
+  const handleStartChat = (matchId: string) => {
+    router.push(`/dashboard/chats?match=${matchId}`);
   };
 
   return (
@@ -65,7 +65,7 @@ export default function History() {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#491A26] mb-4 sm:mb-6 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-[#702C3E] mb-4 sm:mb-6 text-center">
           Match History
         </h1>
 
@@ -87,7 +87,7 @@ export default function History() {
                 bg-[#F5E5E4]
                 border border-[#E6DADA]
                 rounded-lg
-                text-sm text-[#491A26]
+                text-sm text-[#702C3E] font-medium
                 placeholder-gray-400
                 focus:outline-none
                 focus:ring-2 focus:ring-[#702C3E]/20
@@ -127,7 +127,7 @@ export default function History() {
                   <div className="flex-1">
                     {/* Names */}
                     <div className="mb-2">
-                      <span className="text-base sm:text-lg font-bold text-[#491A26]">
+                      <span className="text-base sm:text-lg font-bold text-[#702C3E]">
                         {match.primaryName}
                       </span>
                       <span className="text-xs sm:text-sm text-gray-500 ml-2">
@@ -168,15 +168,15 @@ export default function History() {
                 {/* Date Matched */}
                 <div className="text-right">
                   <div className="text-xs text-[#5A4A4A] mb-1">Date Matched</div>
-                  <div className="text-sm font-semibold text-[#491A26]">
+                  <div className="text-sm font-semibold text-[#702C3E]">
                     {match.dateMatched}
                   </div>
                 </div>
 
-                    {/* Unlock Chat Button (only for Pending) */}
-                    {match.status === "Pending" && (
+                    {/* Start Chat Button (only for accepted/active matches) */}
+                    {(match.status === "Accepted" || match.status === "accepted" || match.status === "active") && (
                       <button
-                        onClick={() => handleUnlockChat(match.id)}
+                        onClick={() => handleStartChat(match.id)}
                         className="
                           w-full sm:w-auto
                           bg-[#702C3E]
@@ -189,7 +189,7 @@ export default function History() {
                           whitespace-nowrap
                         "
                       >
-                        Unlock Chat
+                        Start Chat
                       </button>
                     )}
               </div>

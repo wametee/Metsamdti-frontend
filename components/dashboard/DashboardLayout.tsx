@@ -62,11 +62,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: 'Settings', path: '/dashboard/settings', icon: MdSettings, roles: ['admin', 'superAdmin'] },
   ];
 
-  // Notification counts (can be fetched from API later)
-  const notificationCounts: Record<string, number> = {
-    '/dashboard/interviews': 2,
-    '/dashboard/chats': 2,
-  };
 
   useEffect(() => {
     const loadUser = async () => {
@@ -187,7 +182,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               const isActive = normalizedItemPath === '/dashboard' 
                 ? normalizedPathname === normalizedItemPath
                 : normalizedPathname === normalizedItemPath || normalizedPathname.startsWith(normalizedItemPath + '/');
-              const notificationCount = notificationCounts[item.path] || 0;
               
               return (
                 <button
@@ -196,29 +190,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     router.push(item.path);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition relative ${
+                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition relative font-medium ${
                     isActive
-                      ? 'bg-white text-[#702C3E] font-semibold'
-                      : 'text-[#5A4A4A] hover:bg-white/60'
+                      ? 'bg-white text-[#702C3E] font-semibold text-sm'
+                      : 'text-[#5A4A4A] hover:bg-white/60 text-sm'
                   }`}
                 >
                   <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                     <Icon className={`w-5 h-5 ${isActive ? 'text-[#702C3E]' : 'text-[#5A4A4A]'}`} />
                   </div>
                   {sidebarOpen && (
-                    <div className="flex items-center justify-between flex-1 min-w-0">
-                      <span className="text-sm truncate">{item.label}</span>
-                      {notificationCount > 0 && (
-                        <span className="bg-[#702C3E] text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 ml-2">
-                          {notificationCount}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {!sidebarOpen && notificationCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-[#702C3E] text-white text-xs font-semibold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                      {notificationCount}
-                    </span>
+                    <span className="text-sm truncate font-medium">{item.label}</span>
                   )}
                 </button>
               );
@@ -235,7 +217,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <FiLogOut className="w-5 h-5" />
               </div>
               {sidebarOpen && (
-                <span className="text-sm">Logout</span>
+                <span className="text-sm font-medium">Logout</span>
               )}
             </button>
           </div>

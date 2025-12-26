@@ -75,8 +75,9 @@ export function shouldRedirectToLogin(
   }
   
   // Special case: /auth/me is used to check auth status
-  // If we're on a public route, 401 from /auth/me is expected
-  if (requestUrl.includes("/auth/me") && isPublicRoute(currentPath)) {
+  // NEVER redirect on 401 from /auth/me - it's used to check if user is logged in
+  // This prevents infinite redirect loops on login/signup pages
+  if (requestUrl.includes("/auth/me")) {
     return false;
   }
   
